@@ -44,7 +44,112 @@ ptYAALYycAC1FgAApSAAALU2cACyFQAAthIAALI1AACmawAAtjHUAA==`);
 
     console.log('Init WASM');
 
-    let opl = new OPL(audioCtx.sampleRate, 2);
+
+    let opl = new OPL(44100, 2);
+
+	opl.write(0, 0);
+	opl.write(0, 0);
+
+	opl.generate(512);
+	opl.generate(357);
+
+	opl.write(184, 0);
+	opl.write(177, 0);
+	opl.write(179, 0);
+	opl.write(180, 0);
+	opl.write(181, 0);
+	opl.write(182, 0);
+	opl.write(50, 2);
+	opl.write(82, 34);
+	opl.write(114, 242);
+	opl.write(146, 19);
+	opl.write(242, 0);
+	opl.write(53, 2);
+	opl.write(85, 1);
+	opl.write(117, 245);
+	opl.write(149, 67);
+	opl.write(245, 0);
+	opl.write(200, 14);
+	opl.write(168, 32);
+	opl.write(184, 46);
+	opl.write(33, 2);
+	opl.write(65, 34);
+	opl.write(97, 242);
+	opl.write(129, 19);
+	opl.write(225, 0);
+	opl.write(36, 2);
+	opl.write(68, 1);
+	opl.write(100, 245);
+	opl.write(132, 67);
+	opl.write(228, 0);
+	opl.write(193, 14);
+	opl.write(161, 32);
+	opl.write(177, 42);
+	opl.write(40, 17);
+	opl.write(72, 138);
+	opl.write(104, 241);
+	opl.write(136, 17);
+	opl.write(232, 0);
+	opl.write(43, 1);
+	opl.write(75, 65);
+	opl.write(107, 241);
+	opl.write(139, 179);
+	opl.write(235, 0);
+	opl.write(195, 1);
+	opl.write(163, 32);
+	opl.write(179, 46);
+	opl.write(41, 17);
+	opl.write(73, 138);
+	opl.write(105, 241);
+	opl.write(137, 17);
+	opl.write(233, 0);
+	opl.write(44, 1);
+	opl.write(76, 65);
+	opl.write(108, 241);
+	opl.write(140, 179);
+	opl.write(236, 0);
+	opl.write(196, 1);
+	opl.write(164, 32);
+	opl.write(180, 42);
+	opl.write(42, 5);
+	opl.write(74, 78);
+	opl.write(106, 218);
+	opl.write(138, 37);
+	opl.write(234, 0);
+	opl.write(45, 1);
+	opl.write(77, 1);
+	opl.write(109, 249);
+	opl.write(141, 21);
+	opl.write(237, 0);
+	opl.write(197, 10);
+	opl.write(165, 48);
+	opl.write(181, 55);
+	opl.write(48, 50);
+	opl.write(80, 68);
+	opl.write(112, 248);
+	opl.write(144, 255);
+	opl.write(240, 0);
+	opl.write(51, 17);
+	opl.write(83, 1);
+	opl.write(115, 245);
+	opl.write(147, 127);
+	opl.write(243, 0);
+	opl.write(198, 14);
+	opl.write(166, 48);
+	opl.write(182, 51);
+
+	opl.generate(512);
+
+
+
+
+
+
+
+
+    //let opl = new OPL(audioCtx.sampleRate, 2);
+
+
 
     console.log('WASM init done');
 
@@ -67,6 +172,7 @@ ptYAALYycAC1FgAApSAAALU2cACyFQAAthIAALI1AACmawAAtjHUAA==`);
                     return;
                 }
                 let lenNow = Math.max(2, Math.min(512, lenGen, lenFill - posFill));
+
                 const samples = opl.generate(lenNow);
 
                 //const samples = new Int16Array(s);

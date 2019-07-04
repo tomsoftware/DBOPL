@@ -3,7 +3,7 @@ module Lemmings {
     export class Channel {
 
         private channels: Channel[];
-        private thisChannel: number;
+        public thisChannel: number;
 
         private Channel(index: number): Channel {
             return this.channels[this.thisChannel + index];

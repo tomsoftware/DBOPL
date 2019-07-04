@@ -2,7 +2,7 @@ module Lemmings {
 
     export abstract class GlobalMembers {
 
-        public static readonly OPLRATE = (14318180.0 / 288.0);
+        public static readonly OPLRATE = (14318180.0 / 288.0); // double
 
         /// How much to substract from the base value for the final attenuation
         public static KslCreateTable = new Uint8Array([
@@ -65,10 +65,10 @@ module Lemmings {
         public static TremoloTable = new Uint8Array(GlobalMembers.TREMOLO_TABLE); /** Bit8u[] */
 
         //Start of a channel behind the chip struct start
-        public static ChanOffsetTable = new Uint16Array(32); /** Bit16u[] */
+        public static ChanOffsetTable = new Int16Array(32); /** Bit16u[] */
 
         //Start of an operator behind the chip struct start
-        public static OpOffsetTable = new Uint16Array(64); /** Bit16u[] */
+        public static OpOffsetTable = new Int16Array(64); /** Bit16u[] */
 
 
 
@@ -180,12 +180,12 @@ module Lemmings {
             for (let i = 0; i < 32; i++) {
                 let index = (i & 0xf);
                 if (index >= 9) {
-                    GlobalMembers.ChanOffsetTable[i] = 0;
+                    GlobalMembers.ChanOffsetTable[i] = -1;
                     continue;
                 }
                 /// Make sure the four op channels follow eachother
                 if (index < 6) {
-                    index = ((index % 3) * 2 + (index / 3)) | 0;
+                    index = ((index % 3) * 2 + ((index / 3)|0)) | 0;
                 }
                 /// Add back the bits for highest ones
                 if (i >= 16) {
@@ -197,22 +197,26 @@ module Lemmings {
 
             /// Same for operators
             for (let i = 0; i < 64; i++) {
-                if (i % 8 >= 6 || ((i / 8) % 4 == 3)) {
-                    GlobalMembers.OpOffsetTable[i] = 0;
+                if (i % 8 >= 6 || (((i / 8)|0) % 4 == 3)) {
+                    GlobalMembers.OpOffsetTable[i] = null;
                     continue;
                 }
-                let chNum = ((i / 8) * 3 + (i % 8) % 3) | 0;
+                let chNum = (((i / 8)|0) * 3 + (i % 8) % 3) | 0;
                 //Make sure we use 16 and up for the 2nd range to match the chanoffset gap
-
                 if (chNum >= 12) {
                     chNum += 16 - 12;
                 }
                 let opNum = ((i % 8) / 3) | 0;
-                let chan: Channel = null;
 
-                GlobalMembers.OpOffsetTable[i] = GlobalMembers.ChanOffsetTable[chNum] + opNum;
+                if (GlobalMembers.ChanOffsetTable[chNum] == -1) {
+                    GlobalMembers.OpOffsetTable[i] = -1;
+                }
+                else {
+                    let c = GlobalMembers.ChanOffsetTable[chNum] ;
+                    GlobalMembers.OpOffsetTable[i] = c * 2 + opNum;
+                }
+          
             }
-
         }
     }
 

@@ -19,6 +19,13 @@ module Lemmings {
 
         /// 18 channels with 2 operators each
         public chan: Channel[];
+        
+        /// this is a linked table to all used operators replacing the original DosBox OpOffsetTable[]
+        private OpTable:Operator[];
+        /// this is the list of all availibel operators
+        private op:Operator[];
+        /// this is a linked table to all used Channels replacing the original DosBox ChanOffsetTable[]
+        private ChanTable:Channel[];
 
         public reg104: number; //Bit8u
         public reg08: number; //Bit8u
@@ -46,7 +53,7 @@ module Lemmings {
 
             //Check hom many samples there can be done before the value changes
             let todo = ((256 << (((32 - 10) - 10))) - this.lfoCounter) | 0;
-            let count = (todo + this.lfoAdd - 1) / this.lfoAdd | 0;
+            let count = ((todo + this.lfoAdd - 1) / this.lfoAdd) | 0;
 
             if (count > samples) {
                 count = samples;
@@ -195,10 +202,8 @@ module Lemmings {
                 case 0x30 >> 4:
 
                     index = (((reg >>> 3) & 0x20) | (reg & 0x1f));
-                    if (GlobalMembers.OpOffsetTable[index] != 0) {
-                        let  regOp:Operator = this.chan[0].Op(GlobalMembers.OpOffsetTable[index]);
-                        //let  regOp:Operator = (Operator)(((String)this) + GlobalMembers.OpOffsetTable[index]);
-                        regOp.Write20(this, val);
+                    if (this.OpTable[index]) {
+                        this.OpTable[index].Write20(this, val);
                     };
                     break;
 
@@ -207,10 +212,8 @@ module Lemmings {
                 case 0x50 >> 4:
 
                     index = (((reg >>> 3) & 0x20) | (reg & 0x1f));
-                    if (GlobalMembers.OpOffsetTable[index] != 0) {
-                        let  regOp:Operator = this.chan[0].Op(GlobalMembers.OpOffsetTable[index]);
-                        //let regOp:Operator = (Operator)(((String)this) + GlobalMembers.OpOffsetTable[index]);
-                        regOp.Write40(this, val);
+                    if (this.OpTable[index]) {
+                        this.OpTable[index].Write40(this, val);
                     };
                     break;
 
@@ -219,10 +222,8 @@ module Lemmings {
                 case 0x70 >> 4:
 
                     index = (((reg >>> 3) & 0x20) | (reg & 0x1f));
-                    if (GlobalMembers.OpOffsetTable[index] != 0) {
-                        let  regOp:Operator = this.chan[0].Op(GlobalMembers.OpOffsetTable[index]);
-                        //let regOp:Operator = (Operator)(((String)this) + GlobalMembers.OpOffsetTable[index]);
-                        regOp.Write60(this, val);
+                    if (this.OpTable[index]) {
+                        this.OpTable[index].Write60(this, val);
                     };
                     break;
 
@@ -231,20 +232,16 @@ module Lemmings {
                 case 0x90 >> 4:
 
                     index = (((reg >>> 3) & 0x20) | (reg & 0x1f));
-                    if (GlobalMembers.OpOffsetTable[index] != 0) {
-                        let  regOp:Operator = this.chan[0].Op(GlobalMembers.OpOffsetTable[index]);
-                        //let regOp:Operator = (Operator)(((String)this) + GlobalMembers.OpOffsetTable[index]);
-                        regOp.Write80(this, val);
+                    if (this.OpTable[index]) {
+                        this.OpTable[index].Write80(this, val);
                     };
                     break;
 
                 case 0xa0 >> 4:
 
                     index = (((reg >>> 4) & 0x10) | (reg & 0xf));
-                    if (GlobalMembers.ChanOffsetTable[index] != 0) {
-                        let regChan:Channel = this.chan[GlobalMembers.ChanOffsetTable[index]];
-                       //let regChan:Channel = (Channel)(((String)this) + GlobalMembers.ChanOffsetTable[index]);
-                        regChan.WriteA0(this, val);
+                    if (this.ChanTable[index]) {
+                       this.ChanTable[index].WriteA0(this, val);
                     };
                     break;
 
@@ -255,10 +252,8 @@ module Lemmings {
                     else {
 
                         index = (((reg >>> 4) & 0x10) | (reg & 0xf));
-                        if (GlobalMembers.ChanOffsetTable[index] != 0) {
-                            let regChan:Channel = this.chan[GlobalMembers.ChanOffsetTable[index]];
-                            //let regChan:Channel = (Channel)(((String)this) + GlobalMembers.ChanOffsetTable[index]);
-                            regChan.WriteB0(this, val);
+                        if (this.ChanTable[index]) {
+                            this.ChanTable[index].WriteB0(this, val);
                         };
                     }
                     break;
@@ -266,10 +261,8 @@ module Lemmings {
                 case 0xc0 >> 4:
 
                     index = (((reg >>> 4) & 0x10) | (reg & 0xf));
-                    if (GlobalMembers.ChanOffsetTable[index] != 0) {
-                        let regChan:Channel = this.chan[GlobalMembers.ChanOffsetTable[index]];
-                        //let regChan:Channel = (Channel)(((String)this) + GlobalMembers.ChanOffsetTable[index]);
-                        regChan.WriteC0(this, val);
+                    if (this.ChanTable[index]) {
+                        this.ChanTable[index].WriteC0(this, val);
                     };
 
                 case 0xd0 >> 4:
@@ -277,10 +270,8 @@ module Lemmings {
                 case 0xe0 >> 4:
                 case 0xf0 >> 4:
                     index = (((reg >>> 3) & 0x20) | (reg & 0x1f));
-                    if (GlobalMembers.OpOffsetTable[index] != 0) {
-                        let  regOp:Operator = this.chan[0].Op(GlobalMembers.OpOffsetTable[index]);
-                        //let regOp:Operator = (Operator)(((String)this) + GlobalMembers.OpOffsetTable[index]);
-                        regOp.WriteE0(this, val);
+                    if (this.OpTable[index]) {
+                        this.OpTable[index].WriteE0(this, val);
                     };
                     break;
             }
@@ -310,8 +301,9 @@ module Lemmings {
                 //todo ?? do we need this
                 output.fill(0, outputIndex, outputIndex + samples);
 
-                for (let count = 0; count < 9; count++) {
-                    this.chan[count].synthHandler(this, samples, output);
+                let ch = this.chan[0];
+                while (ch.thisChannel < 9) {
+                    ch = ch.synthHandler(this, samples, output);
                 }
 
                 total -= samples;
@@ -340,6 +332,8 @@ module Lemmings {
 
 
         public Setup(rate: number /* Bit32u */): void {
+            this.InitTables();
+
             let scale = GlobalMembers.OPLRATE / rate;
 
             //Noise counter is run at the same precision as general waves
@@ -468,6 +462,19 @@ module Lemmings {
             }
         }
 
+        private InitTables() {
+            this.OpTable = new Array(GlobalMembers.OpOffsetTable.length);
+            
+            for(let i=0; i< GlobalMembers.OpOffsetTable.length; i++) {
+                this.OpTable[i] = this.op[GlobalMembers.OpOffsetTable[i]];
+            }
+
+            this.ChanTable = new Array(GlobalMembers.ChanOffsetTable.length);
+            for(let i=0; i< GlobalMembers.ChanOffsetTable.length; i++) {
+                this.ChanTable[i] = this.chan[GlobalMembers.ChanOffsetTable[i]];
+            }
+        }
+
         public constructor() {
             this.reg08 = 0;
             this.reg04 = 0;
@@ -476,15 +483,16 @@ module Lemmings {
             this.opl3Active = 0;
 
             const ChannelCount = 18;
-            this.chan = new Array(ChannelCount); // new Channel[18];
-            let op = new Array(2 * ChannelCount); // new Operator[18 * 2]
+            this.chan = new Array<Channel>(ChannelCount); // new Channel[18];
+            this.op = new Array<Operator>(2 * ChannelCount); // new Operator[18 * 2]
 
-            for (let i = 0; i < op.length; i++) {
-                op[i] = new Operator();
+            for (let i = 0; i < this.op.length; i++) {
+                this.op[i] = new Operator();
+                this.op[i].OperatorIndex = i;
             }
 
             for (let i = 0; i < ChannelCount; i++) {
-                this.chan[i] = new Channel(this.chan, i, op, i * 2);
+                this.chan[i] = new Channel(this.chan, i, this.op, i * 2);
             }
         }
     }

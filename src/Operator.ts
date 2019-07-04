@@ -18,6 +18,8 @@ module Lemmings {
 
     export class Operator {
 
+        /// todo: delete me
+        public OperatorIndex:number;
 
         //public volHandler: VolumeHandler;
 
