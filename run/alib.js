@@ -4,7 +4,7 @@ var Lemmings;
         constructor(channels, thisChannel, operators, thisOpIndex) {
             this.old = new Int32Array(2); /** int */
             this.channels = channels;
-            this.thisChannel = thisChannel;
+            this.ChannelIndex = thisChannel;
             this.operators = operators;
             this.thisOpIndex = thisOpIndex;
             this.old[0] = this.old[1] = 0 | 0;
@@ -18,8 +18,11 @@ var Lemmings;
             this.synthMode = Lemmings.SynthMode.sm2FM;
             //this.synthHandler = this.BlockTemplate(SynthMode.sm2FM);
         }
+        printDebug() {
+            //console.log(this.ChannelIndex + ";" + this.chanData + ";" + this.old[0] + ";" + this.old[1] + ";" + this.feedback + ";" + this.regB0 + ";" + this.regC0 + ";" + this.fourMask + ";" + this.maskLeft + ";" + this.maskRight);
+        }
         Channel(index) {
-            return this.channels[this.thisChannel + index];
+            return this.channels[this.ChannelIndex + index];
         }
         Op(index) {
             //  return &( ( this + (index >> 1) )->op[ index & 1 ]);
@@ -163,7 +166,7 @@ var Lemmings;
                     this.synthMode = Lemmings.SynthMode.sm3AM;
                 }
                 else {
-                    //this.synthHandler = this.BlockTemplate < SynthMode.sm3FM) >;
+                    //this.synthHandler = this.BlockTemplate<SynthMode.sm3FM>;
                     this.synthMode = Lemmings.SynthMode.sm3FM;
                 }
                 this.maskLeft = (val & 0x10) != 0 ? -1 : 0;
@@ -391,12 +394,13 @@ var Lemmings;
             this.opl3Active = 0;
             const ChannelCount = 18;
             this.chan = new Array(ChannelCount); // new Channel[18];
-            let op = new Array(2 * ChannelCount); // new Operator[18 * 2]
-            for (let i = 0; i < op.length; i++) {
-                op[i] = new Lemmings.Operator();
+            this.op = new Array(2 * ChannelCount); // new Operator[18 * 2]
+            for (let i = 0; i < this.op.length; i++) {
+                this.op[i] = new Lemmings.Operator();
+                this.op[i].OperatorIndex = i;
             }
             for (let i = 0; i < ChannelCount; i++) {
-                this.chan[i] = new Lemmings.Channel(this.chan, i, op, i * 2);
+                this.chan[i] = new Lemmings.Channel(this.chan, i, this.op, i * 2);
             }
         }
         ForwardLFO(samples /* Bit32u */) {
@@ -406,7 +410,7 @@ var Lemmings;
             this.tremoloValue = (Lemmings.GlobalMembers.TremoloTable[this.tremoloIndex] >>> this.tremoloStrength) | 0;
             //Check hom many samples there can be done before the value changes
             let todo = ((256 << (((32 - 10) - 10))) - this.lfoCounter) | 0;
-            let count = (todo + this.lfoAdd - 1) / this.lfoAdd | 0;
+            let count = ((todo + this.lfoAdd - 1) / this.lfoAdd) | 0;
             if (count > samples) {
                 count = samples;
                 this.lfoCounter += count * this.lfoAdd | 0;
@@ -428,8 +432,8 @@ var Lemmings;
         }
         ForwardNoise() {
             this.noiseCounter += this.noiseAdd;
-            let count = (this.noiseCounter >>> ((32 - 10) - 10)) | 0;
-            this.noiseCounter &= ((1 << (32 - 10)) - 1) | 0;
+            let count = (this.noiseCounter >>> ((32 - 10) - 10));
+            this.noiseCounter &= ((1 << (32 - 10)) - 1);
             for (; count > 0; --count) {
                 //Noise calculation from mame
                 this.noiseValue ^= (0x800302) & (0 - (this.noiseValue & 1));
@@ -537,49 +541,39 @@ var Lemmings;
                 case 0x20 >> 4:
                 case 0x30 >> 4:
                     index = (((reg >>> 3) & 0x20) | (reg & 0x1f));
-                    if (Lemmings.GlobalMembers.OpOffsetTable[index] != 0) {
-                        let regOp = this.chan[0].Op(Lemmings.GlobalMembers.OpOffsetTable[index]);
-                        //let  regOp:Operator = (Operator)(((String)this) + GlobalMembers.OpOffsetTable[index]);
-                        regOp.Write20(this, val);
+                    if (this.OpTable[index]) {
+                        this.OpTable[index].Write20(this, val);
                     }
                     ;
                     break;
                 case 0x40 >> 4:
                 case 0x50 >> 4:
                     index = (((reg >>> 3) & 0x20) | (reg & 0x1f));
-                    if (Lemmings.GlobalMembers.OpOffsetTable[index] != 0) {
-                        let regOp = this.chan[0].Op(Lemmings.GlobalMembers.OpOffsetTable[index]);
-                        //let regOp:Operator = (Operator)(((String)this) + GlobalMembers.OpOffsetTable[index]);
-                        regOp.Write40(this, val);
+                    if (this.OpTable[index]) {
+                        this.OpTable[index].Write40(this, val);
                     }
                     ;
                     break;
                 case 0x60 >> 4:
                 case 0x70 >> 4:
                     index = (((reg >>> 3) & 0x20) | (reg & 0x1f));
-                    if (Lemmings.GlobalMembers.OpOffsetTable[index] != 0) {
-                        let regOp = this.chan[0].Op(Lemmings.GlobalMembers.OpOffsetTable[index]);
-                        //let regOp:Operator = (Operator)(((String)this) + GlobalMembers.OpOffsetTable[index]);
-                        regOp.Write60(this, val);
+                    if (this.OpTable[index]) {
+                        this.OpTable[index].Write60(this, val);
                     }
                     ;
                     break;
                 case 0x80 >> 4:
                 case 0x90 >> 4:
                     index = (((reg >>> 3) & 0x20) | (reg & 0x1f));
-                    if (Lemmings.GlobalMembers.OpOffsetTable[index] != 0) {
-                        let regOp = this.chan[0].Op(Lemmings.GlobalMembers.OpOffsetTable[index]);
-                        //let regOp:Operator = (Operator)(((String)this) + GlobalMembers.OpOffsetTable[index]);
-                        regOp.Write80(this, val);
+                    if (this.OpTable[index]) {
+                        this.OpTable[index].Write80(this, val);
                     }
                     ;
                     break;
                 case 0xa0 >> 4:
                     index = (((reg >>> 4) & 0x10) | (reg & 0xf));
-                    if (Lemmings.GlobalMembers.ChanOffsetTable[index] != 0) {
-                        let regChan = this.chan[Lemmings.GlobalMembers.ChanOffsetTable[index]];
-                        //let regChan:Channel = (Channel)(((String)this) + GlobalMembers.ChanOffsetTable[index]);
-                        regChan.WriteA0(this, val);
+                    if (this.ChanTable[index]) {
+                        this.ChanTable[index].WriteA0(this, val);
                     }
                     ;
                     break;
@@ -589,20 +583,16 @@ var Lemmings;
                     }
                     else {
                         index = (((reg >>> 4) & 0x10) | (reg & 0xf));
-                        if (Lemmings.GlobalMembers.ChanOffsetTable[index] != 0) {
-                            let regChan = this.chan[Lemmings.GlobalMembers.ChanOffsetTable[index]];
-                            //let regChan:Channel = (Channel)(((String)this) + GlobalMembers.ChanOffsetTable[index]);
-                            regChan.WriteB0(this, val);
+                        if (this.ChanTable[index]) {
+                            this.ChanTable[index].WriteB0(this, val);
                         }
                         ;
                     }
                     break;
                 case 0xc0 >> 4:
                     index = (((reg >>> 4) & 0x10) | (reg & 0xf));
-                    if (Lemmings.GlobalMembers.ChanOffsetTable[index] != 0) {
-                        let regChan = this.chan[Lemmings.GlobalMembers.ChanOffsetTable[index]];
-                        //let regChan:Channel = (Channel)(((String)this) + GlobalMembers.ChanOffsetTable[index]);
-                        regChan.WriteC0(this, val);
+                    if (this.ChanTable[index]) {
+                        this.ChanTable[index].WriteC0(this, val);
                     }
                     ;
                 case 0xd0 >> 4:
@@ -610,10 +600,8 @@ var Lemmings;
                 case 0xe0 >> 4:
                 case 0xf0 >> 4:
                     index = (((reg >>> 3) & 0x20) | (reg & 0x1f));
-                    if (Lemmings.GlobalMembers.OpOffsetTable[index] != 0) {
-                        let regOp = this.chan[0].Op(Lemmings.GlobalMembers.OpOffsetTable[index]);
-                        //let regOp:Operator = (Operator)(((String)this) + GlobalMembers.OpOffsetTable[index]);
-                        regOp.WriteE0(this, val);
+                    if (this.OpTable[index]) {
+                        this.OpTable[index].WriteE0(this, val);
                     }
                     ;
                     break;
@@ -638,9 +626,11 @@ var Lemmings;
             while (total > 0) {
                 let samples = this.ForwardLFO(total);
                 //todo ?? do we need this
-                output.fill(0, outputIndex, outputIndex + samples);
-                for (let count = 0; count < 9; count++) {
-                    this.chan[count].synthHandler(this, samples, output);
+                //output.fill(0, outputIndex, outputIndex + samples);
+                let ch = this.chan[0];
+                while (ch.ChannelIndex < 9) {
+                    ch.printDebug();
+                    ch = ch.synthHandler(this, samples, output);
                 }
                 total -= samples;
                 outputIndex += samples;
@@ -661,6 +651,7 @@ var Lemmings;
             }
         }
         Setup(rate /* Bit32u */) {
+            this.InitTables();
             let scale = Lemmings.GlobalMembers.OPLRATE / rate;
             //Noise counter is run at the same precision as general waves
             this.noiseAdd = (0.5 + scale * (1 << ((32 - 10) - 10))) | 0;
@@ -769,6 +760,16 @@ var Lemmings;
                 this.WriteReg(i, 0x0);
             }
         }
+        InitTables() {
+            this.OpTable = new Array(Lemmings.GlobalMembers.OpOffsetTable.length);
+            for (let i = 0; i < Lemmings.GlobalMembers.OpOffsetTable.length; i++) {
+                this.OpTable[i] = this.op[Lemmings.GlobalMembers.OpOffsetTable[i]];
+            }
+            this.ChanTable = new Array(Lemmings.GlobalMembers.ChanOffsetTable.length);
+            for (let i = 0; i < Lemmings.GlobalMembers.ChanOffsetTable.length; i++) {
+                this.ChanTable[i] = this.chan[Lemmings.GlobalMembers.ChanOffsetTable[i]];
+            }
+        }
     }
     Lemmings.Chip = Chip;
 })(Lemmings || (Lemmings = {}));
@@ -856,12 +857,12 @@ var Lemmings;
             for (let i = 0; i < 32; i++) {
                 let index = (i & 0xf);
                 if (index >= 9) {
-                    GlobalMembers.ChanOffsetTable[i] = 0;
+                    GlobalMembers.ChanOffsetTable[i] = -1;
                     continue;
                 }
                 /// Make sure the four op channels follow eachother
                 if (index < 6) {
-                    index = ((index % 3) * 2 + (index / 3)) | 0;
+                    index = ((index % 3) * 2 + ((index / 3) | 0)) | 0;
                 }
                 /// Add back the bits for highest ones
                 if (i >= 16) {
@@ -871,22 +872,27 @@ var Lemmings;
             }
             /// Same for operators
             for (let i = 0; i < 64; i++) {
-                if (i % 8 >= 6 || ((i / 8) % 4 == 3)) {
-                    GlobalMembers.OpOffsetTable[i] = 0;
+                if (i % 8 >= 6 || (((i / 8) | 0) % 4 == 3)) {
+                    GlobalMembers.OpOffsetTable[i] = null;
                     continue;
                 }
-                let chNum = ((i / 8) * 3 + (i % 8) % 3) | 0;
+                let chNum = (((i / 8) | 0) * 3 + (i % 8) % 3) | 0;
                 //Make sure we use 16 and up for the 2nd range to match the chanoffset gap
                 if (chNum >= 12) {
                     chNum += 16 - 12;
                 }
                 let opNum = ((i % 8) / 3) | 0;
-                let chan = null;
-                GlobalMembers.OpOffsetTable[i] = GlobalMembers.ChanOffsetTable[chNum] + opNum;
+                if (GlobalMembers.ChanOffsetTable[chNum] == -1) {
+                    GlobalMembers.OpOffsetTable[i] = -1;
+                }
+                else {
+                    let c = GlobalMembers.ChanOffsetTable[chNum];
+                    GlobalMembers.OpOffsetTable[i] = c * 2 + opNum;
+                }
             }
         }
     }
-    GlobalMembers.OPLRATE = (14318180.0 / 288.0);
+    GlobalMembers.OPLRATE = (14318180.0 / 288.0); // double
     /// How much to substract from the base value for the final attenuation
     GlobalMembers.KslCreateTable = new Uint8Array([
         64, 32, 24, 19,
@@ -936,9 +942,9 @@ var Lemmings;
     GlobalMembers.KslTable = new Uint8Array(8 * 16); /** Bit8u[] */
     GlobalMembers.TremoloTable = new Uint8Array(GlobalMembers.TREMOLO_TABLE); /** Bit8u[] */
     //Start of a channel behind the chip struct start
-    GlobalMembers.ChanOffsetTable = new Uint16Array(32); /** Bit16u[] */
+    GlobalMembers.ChanOffsetTable = new Int16Array(32); /** Bit16u[] */
     //Start of an operator behind the chip struct start
-    GlobalMembers.OpOffsetTable = new Uint16Array(64); /** Bit16u[] */
+    GlobalMembers.OpOffsetTable = new Int16Array(64); /** Bit16u[] */
     //The lower bits are the shift of the operator vibrato value
     //The highest bit is right shifted to generate -1 or 0 for negation
     //So taking the highest input value of 7 this gives 3, 7, 3, 0, -3, -7, -3, 0
@@ -1005,15 +1011,19 @@ var Lemmings;
             let out = this.buffer;
             let outIndex = 0;
             let ch = this.channels;
+            let debug = "";
             for (let i = 0; i < samples; i++) {
+                debug += buffer[i] + ">";
                 let v = buffer[i] << VOL_AMP;
                 out[outIndex] = this.CLIP(v);
+                debug += out[outIndex] + "|";
                 outIndex++;
                 if (ch == 2) {
                     out[outIndex] = this.CLIP(v);
                     outIndex++;
                 }
             }
+            // console.log(debug);
             return;
         }
         AddSamples_s32(samples, buffer) {
@@ -1059,7 +1069,7 @@ var Lemmings;
         constructor() {
             this.chanData = 0 | 0;
             this.freqMul = 0 | 0;
-            this.waveIndex = 0 | 0;
+            this.waveIndex = 0 >>> 0;
             this.waveAdd = 0 | 0;
             this.waveCurrent = 0 | 0;
             this.keyOn = 0 | 0;
@@ -1076,6 +1086,10 @@ var Lemmings;
             this.totalLevel = (511 << ((9) - 9));
             this.volume = (511 << ((9) - 9));
             this.releaseAdd = 0;
+        }
+        printDebug() {
+            //console.log(this.OperatorIndex + ": " + this.waveBase + " " + this.waveMask + " " + this.waveStart + " " + this.waveIndex + " " + this.waveAdd + " " + this.waveCurrent + " " + this.chanData + " " + this.freqMul + " " + this.vibrato + " " + this.sustainLevel + " " + this.totalLevel + " " + this.currentLevel + " " + this.volume + " " + this.attackAdd + " " + this.decayAdd + " " + this.releaseAdd + " " + this.rateIndex + " " + this.rateZero + " " + this.keyOn);
+            //console.log(this.reg20 + " " + this.reg40 + " " + this.reg60 + " " + this.reg80 + " " + this.regE0 + " " + this.state + " " + this.tremoloMask + " " + this.vibStrength + " " + this.ksr);
         }
         SetState(s /**u8  */) {
             this.state = s;
@@ -1227,7 +1241,7 @@ var Lemmings;
             this.regE0 = val;
             //this.waveBase = GlobalMembers.WaveTable + GlobalMembers.WaveBaseTable[waveForm];
             this.waveBase = Lemmings.GlobalMembers.WaveBaseTable[waveForm];
-            this.waveStart = Lemmings.GlobalMembers.WaveStartTable[waveForm] << (32 - 10);
+            this.waveStart = (Lemmings.GlobalMembers.WaveStartTable[waveForm] << (32 - 10)) >>> 0;
             this.waveMask = Lemmings.GlobalMembers.WaveMaskTable[waveForm];
         }
         Silent() {
@@ -1327,17 +1341,18 @@ var Lemmings;
             return ret;
         }
         ForwardWave() {
-            this.waveIndex += this.waveCurrent;
+            this.waveIndex = (this.waveIndex + this.waveCurrent) >>> 0;
             return (this.waveIndex >>> (32 - 10));
         }
         ForwardVolume() {
             return this.currentLevel + this.TemplateVolume();
         }
         GetSample(modulation /** Bits */) {
+            this.printDebug();
             let vol = this.ForwardVolume();
             if (((vol) >= ((12 * 256) >> (3 - ((9) - 9))))) {
                 //Simply forward the wave
-                this.waveIndex += this.waveCurrent;
+                this.waveIndex = (this.waveIndex + this.waveCurrent) >>> 0;
                 return 0;
             }
             else {
@@ -1406,12 +1421,19 @@ var Lemmings;
             this.dbopl.Init(freq);
         }
         write(reg, val) {
+            console.log("write(" + reg + ", " + val + ")");
             this.dbopl.WriteReg(reg, val);
         }
         getBuffer() {
             return this.buffer;
         }
+        //n = 50;
         generate(lenSamples) {
+            //if (this.n< 0) {
+            //	return;
+            //}
+            //this.n --;
+            console.log("generate(" + lenSamples + ")");
             if (lenSamples > 512) {
                 throw new Error('OPL.generate() cannot generate more than 512 samples per call');
             }
@@ -1463,7 +1485,165 @@ ptYAALYycAC1FgAApSAAALU2cACyFQAAthIAALI1AACmawAAtjHUAA==`);
     }
     const samplesPerTick = Math.round(audioCtx.sampleRate / 560);
     console.log('Init WASM');
-    let opl = new Lemmings.OPL(audioCtx.sampleRate, 2);
+    let opl = new Lemmings.OPL(44100, 2);
+    opl.write(0, 0);
+    opl.write(0, 0);
+    opl.generate(512);
+    opl.generate(357);
+    opl.write(184, 0);
+    opl.write(177, 0);
+    opl.write(179, 0);
+    opl.write(180, 0);
+    opl.write(181, 0);
+    opl.write(182, 0);
+    opl.write(50, 2);
+    opl.write(82, 34);
+    opl.write(114, 242);
+    opl.write(146, 19);
+    opl.write(242, 0);
+    opl.write(53, 2);
+    opl.write(85, 1);
+    opl.write(117, 245);
+    opl.write(149, 67);
+    opl.write(245, 0);
+    opl.write(200, 14);
+    opl.write(168, 32);
+    opl.write(184, 46);
+    opl.write(33, 2);
+    opl.write(65, 34);
+    opl.write(97, 242);
+    opl.write(129, 19);
+    opl.write(225, 0);
+    opl.write(36, 2);
+    opl.write(68, 1);
+    opl.write(100, 245);
+    opl.write(132, 67);
+    opl.write(228, 0);
+    opl.write(193, 14);
+    opl.write(161, 32);
+    opl.write(177, 42);
+    opl.write(40, 17);
+    opl.write(72, 138);
+    opl.write(104, 241);
+    opl.write(136, 17);
+    opl.write(232, 0);
+    opl.write(43, 1);
+    opl.write(75, 65);
+    opl.write(107, 241);
+    opl.write(139, 179);
+    opl.write(235, 0);
+    opl.write(195, 1);
+    opl.write(163, 32);
+    opl.write(179, 46);
+    opl.write(41, 17);
+    opl.write(73, 138);
+    opl.write(105, 241);
+    opl.write(137, 17);
+    opl.write(233, 0);
+    opl.write(44, 1);
+    opl.write(76, 65);
+    opl.write(108, 241);
+    opl.write(140, 179);
+    opl.write(236, 0);
+    opl.write(196, 1);
+    opl.write(164, 32);
+    opl.write(180, 42);
+    opl.write(42, 5);
+    opl.write(74, 78);
+    opl.write(106, 218);
+    opl.write(138, 37);
+    opl.write(234, 0);
+    opl.write(45, 1);
+    opl.write(77, 1);
+    opl.write(109, 249);
+    opl.write(141, 21);
+    opl.write(237, 0);
+    opl.write(197, 10);
+    opl.write(165, 48);
+    opl.write(181, 55);
+    opl.write(48, 50);
+    opl.write(80, 68);
+    opl.write(112, 248);
+    opl.write(144, 255);
+    opl.write(240, 0);
+    opl.write(51, 17);
+    opl.write(83, 1);
+    opl.write(115, 245);
+    opl.write(147, 127);
+    opl.write(243, 0);
+    opl.write(198, 14);
+    opl.write(166, 48);
+    opl.write(182, 51);
+    opl.generate(512);
+    opl.generate(512);
+    opl.generate(512);
+    opl.generate(512);
+    opl.generate(512);
+    opl.generate(512);
+    opl.generate(512);
+    opl.generate(512);
+    opl.generate(512);
+    opl.generate(512);
+    opl.generate(512);
+    opl.generate(512);
+    opl.generate(512);
+    opl.generate(512);
+    opl.generate(155);
+    opl.generate(512);
+    opl.generate(512);
+    opl.generate(501);
+    opl.write(178, 0);
+    opl.write(182, 19);
+    opl.write(34, 5);
+    opl.write(66, 78);
+    opl.write(98, 218);
+    opl.write(130, 37);
+    opl.write(226, 0);
+    opl.write(37, 1);
+    opl.write(69, 1);
+    opl.write(101, 249);
+    opl.write(133, 21);
+    opl.write(229, 0);
+    opl.write(194, 10);
+    opl.write(162, 48);
+    opl.write(178, 51);
+    opl.write(166, 152);
+    opl.write(182, 49);
+    opl.generate(512);
+    opl.generate(512);
+    opl.generate(512);
+    opl.generate(512);
+    opl.generate(512);
+    opl.generate(512);
+    opl.generate(512);
+    opl.generate(512);
+    opl.generate(512);
+    opl.generate(512);
+    opl.generate(512);
+    opl.generate(512);
+    opl.generate(512);
+    opl.generate(11);
+    opl.generate(512);
+    opl.generate(512);
+    opl.generate(512);
+    opl.generate(512);
+    opl.generate(133);
+    opl.write(181, 23);
+    opl.write(182, 17);
+    opl.write(165, 32);
+    opl.write(181, 54);
+    opl.write(182, 49);
+    opl.generate(512);
+    opl.generate(512);
+    opl.generate(512);
+    opl.generate(512);
+    opl.generate(512);
+    opl.generate(512);
+    opl.generate(512);
+    opl.generate(512);
+    opl.generate(512);
+    console.log('done!');
+    //let opl = new OPL(audioCtx.sampleRate, 2);
     console.log('WASM init done');
     let p = 0;
     let lenGen = 0;

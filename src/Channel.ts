@@ -1,12 +1,15 @@
 module Lemmings {
 
     export class Channel {
+        printDebug() {
+            //console.log(this.ChannelIndex + ";" + this.chanData + ";" + this.old[0] + ";" + this.old[1] + ";" + this.feedback + ";" + this.regB0 + ";" + this.regC0 + ";" + this.fourMask + ";" + this.maskLeft + ";" + this.maskRight);
+        }
 
         private channels: Channel[];
-        public thisChannel: number;
+        public ChannelIndex: number;
 
         private Channel(index: number): Channel {
-            return this.channels[this.thisChannel + index];
+            return this.channels[this.ChannelIndex + index];
         }
 
         private operators: Operator[];
@@ -181,7 +184,7 @@ module Lemmings {
                     this.synthMode = SynthMode.sm3AM;
                 }
                 else {
-                    //this.synthHandler = this.BlockTemplate < SynthMode.sm3FM) >;
+                    //this.synthHandler = this.BlockTemplate<SynthMode.sm3FM>;
                     this.synthMode = SynthMode.sm3FM;
                 }
                 this.maskLeft = (val & 0x10) != 0 ? -1 : 0;
@@ -412,7 +415,7 @@ module Lemmings {
         public constructor(channels: Channel[], thisChannel: number, operators: Operator[], thisOpIndex: number) {
 
             this.channels = channels;
-            this.thisChannel = thisChannel;
+            this.ChannelIndex = thisChannel;
             this.operators = operators;
             this.thisOpIndex = thisOpIndex;
 

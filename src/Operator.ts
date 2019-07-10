@@ -19,12 +19,12 @@ module Lemmings {
     export class Operator {
 
         /// todo: delete me
-        public OperatorIndex:number;
+        public OperatorIndex: number;
 
         //public volHandler: VolumeHandler;
 
 
-        public waveBase: number;// Int16Array; /** s16*  */
+        public waveBase: number; /** s16*  */
         public waveMask: number; /** u32 */
         public waveStart: number; /** u32 */
 
@@ -62,7 +62,13 @@ module Lemmings {
         //Strength of the vibrato
         public vibStrength: number; /** u8 */
         //Keep track of the calculated KSR so we can check for changes
-        public ksr; /** u8 */
+        public ksr: number; /** u8 */
+
+
+        printDebug() {
+            //console.log(this.OperatorIndex + ": " + this.waveBase + " " + this.waveMask + " " + this.waveStart + " " + this.waveIndex + " " + this.waveAdd + " " + this.waveCurrent + " " + this.chanData + " " + this.freqMul + " " + this.vibrato + " " + this.sustainLevel + " " + this.totalLevel + " " + this.currentLevel + " " + this.volume + " " + this.attackAdd + " " + this.decayAdd + " " + this.releaseAdd + " " + this.rateIndex + " " + this.rateZero + " " + this.keyOn);
+            //console.log(this.reg20 + " " + this.reg40 + " " + this.reg60 + " " + this.reg80 + " " + this.regE0 + " " + this.state + " " + this.tremoloMask + " " + this.vibStrength + " " + this.ksr);
+        }
 
 
         private SetState(s: State /**u8  */): void {
@@ -237,7 +243,7 @@ module Lemmings {
 
             //this.waveBase = GlobalMembers.WaveTable + GlobalMembers.WaveBaseTable[waveForm];
             this.waveBase = GlobalMembers.WaveBaseTable[waveForm];
-            this.waveStart = GlobalMembers.WaveStartTable[waveForm] << (32 - 10);
+            this.waveStart = (GlobalMembers.WaveStartTable[waveForm] << (32 - 10)) >>> 0;
             this.waveMask = GlobalMembers.WaveMaskTable[waveForm];
 
         }
@@ -297,7 +303,7 @@ module Lemmings {
         public TemplateVolume(): number {
             var yes = this.state;
             let vol = this.volume;
-            let change;
+            let change: number;
 
             switch (yes) {
                 case State.OFF:
@@ -357,8 +363,7 @@ module Lemmings {
         }
 
         public ForwardWave(): number /* unsigned long  */ {
-            this.waveIndex += this.waveCurrent;
-
+            this.waveIndex = (this.waveIndex + this.waveCurrent) >>> 0;
             return (this.waveIndex >>> (32 - 10));
         }
 
@@ -367,11 +372,12 @@ module Lemmings {
         }
 
         public GetSample(modulation: number /** Bits */): number /** Bits  */ {
+            this.printDebug();
             let vol = this.ForwardVolume();
 
             if (((vol) >= ((12 * 256) >> (3 - ((9) - 9))))) {
                 //Simply forward the wave
-                this.waveIndex += this.waveCurrent;
+                this.waveIndex = (this.waveIndex + this.waveCurrent) >>> 0;
                 return 0;
             }
             else {
@@ -391,7 +397,7 @@ module Lemmings {
         public constructor() {
             this.chanData = 0 | 0;
             this.freqMul = 0 | 0;
-            this.waveIndex = 0 | 0;
+            this.waveIndex = 0 >>> 0;
             this.waveAdd = 0 | 0;
             this.waveCurrent = 0 | 0;
             this.keyOn = 0 | 0;

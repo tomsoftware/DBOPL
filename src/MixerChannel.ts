@@ -31,15 +31,22 @@ module Lemmings {
             let outIndex = 0;
             let ch = this.channels;
 
+            let debug = "";
+
             for (let i = 0; i < samples; i++) {
+                debug += buffer[i] +">";
+
                 let v = buffer[i] << VOL_AMP;
                 out[outIndex] = this.CLIP(v);
+                debug += out[outIndex] +"|";
                 outIndex++;
                 if (ch == 2) {
                     out[outIndex] = this.CLIP(v);
                     outIndex++;
                 }
             }
+
+           // console.log(debug);
             return;
         }
 

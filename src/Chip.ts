@@ -78,8 +78,8 @@ module Lemmings {
         public ForwardNoise(): number /* Bit32u */ {
             this.noiseCounter += this.noiseAdd;
 
-            let count = (this.noiseCounter >>> ((32 - 10) - 10)) | 0;
-            this.noiseCounter &= ((1 << (32 - 10)) - 1) | 0;
+            let count = (this.noiseCounter >>> ((32 - 10) - 10));
+            this.noiseCounter &= ((1 << (32 - 10)) - 1);
             for (; count > 0; --count) {
                 //Noise calculation from mame
                 this.noiseValue ^= (0x800302) & (0 - (this.noiseValue & 1));
@@ -299,10 +299,11 @@ module Lemmings {
                 let samples = this.ForwardLFO(total);
 
                 //todo ?? do we need this
-                output.fill(0, outputIndex, outputIndex + samples);
+                //output.fill(0, outputIndex, outputIndex + samples);
 
                 let ch = this.chan[0];
-                while (ch.thisChannel < 9) {
+                while (ch.ChannelIndex < 9) {
+                    ch.printDebug();
                     ch = ch.synthHandler(this, samples, output);
                 }
 
