@@ -18,9 +18,6 @@ var Lemmings;
             this.synthMode = Lemmings.SynthMode.sm2FM;
             //this.synthHandler = this.BlockTemplate(SynthMode.sm2FM);
         }
-        printDebug() {
-            //console.log(this.ChannelIndex + ";" + this.chanData + ";" + this.old[0] + ";" + this.old[1] + ";" + this.feedback + ";" + this.regB0 + ";" + this.regC0 + ";" + this.fourMask + ";" + this.maskLeft + ";" + this.maskRight);
-        }
         Channel(index) {
             return this.channels[this.ChannelIndex + index];
         }
@@ -244,7 +241,7 @@ var Lemmings;
         }
         /// template<SynthMode mode> Channel* Channel::BlockTemplate( Chip* chip, Bit32u samples, Bit32s* output ) 
         //public BlockTemplate(mode: SynthMode, chip: Chip, samples: number, output: Int32Array /** Bit32s* */): Channel {
-        synthHandler(chip, samples, output /** Bit32s* */) {
+        synthHandler(chip, samples, output, outputIndex /** Bit32s* */) {
             var mode = this.synthMode;
             switch (mode) {
                 case Lemmings.SynthMode.sm2AM:
@@ -300,11 +297,11 @@ var Lemmings;
             for (let i = 0; i < samples; i++) {
                 //Early out for percussion handlers
                 if (mode == Lemmings.SynthMode.sm2Percussion) {
-                    this.GeneratePercussion(false, chip, output, i);
+                    this.GeneratePercussion(false, chip, output, outputIndex + i);
                     continue; //Prevent some unitialized value bitching
                 }
                 else if (mode == Lemmings.SynthMode.sm3Percussion) {
-                    this.GeneratePercussion(true, chip, output, i * 2);
+                    this.GeneratePercussion(true, chip, output, outputIndex + i * 2);
                     continue; //Prevent some unitialized value bitching
                 }
                 //Do unsigned shift so we can shift out all signed long but still stay in 10 bit range otherwise
@@ -344,7 +341,7 @@ var Lemmings;
                 switch (mode) {
                     case Lemmings.SynthMode.sm2AM:
                     case Lemmings.SynthMode.sm2FM:
-                        output[i] += sample;
+                        output[outputIndex + i] += sample;
                         break;
                     case Lemmings.SynthMode.sm3AM:
                     case Lemmings.SynthMode.sm3FM:
@@ -352,8 +349,8 @@ var Lemmings;
                     case Lemmings.SynthMode.sm3AMFM:
                     case Lemmings.SynthMode.sm3FMAM:
                     case Lemmings.SynthMode.sm3AMAM:
-                        output[i * 2 + 0] += sample & this.maskLeft;
-                        output[i * 2 + 1] += sample & this.maskRight;
+                        output[outputIndex + i * 2 + 0] += sample & this.maskLeft;
+                        output[outputIndex + i * 2 + 1] += sample & this.maskRight;
                         break;
                 }
             }
@@ -629,8 +626,8 @@ var Lemmings;
                 //output.fill(0, outputIndex, outputIndex + samples);
                 let ch = this.chan[0];
                 while (ch.ChannelIndex < 9) {
-                    ch.printDebug();
-                    ch = ch.synthHandler(this, samples, output);
+                    //ch.printDebug();
+                    ch = ch.synthHandler(this, samples, output, outputIndex);
                 }
                 total -= samples;
                 outputIndex += samples;
@@ -644,7 +641,7 @@ var Lemmings;
                 //int count = 0;
                 for (let c = 0; c < 18; c++) {
                     //count++;
-                    this.chan[c].synthHandler(this, samples, output);
+                    this.chan[c].synthHandler(this, samples, output, outputIndex);
                 }
                 total -= samples;
                 outputIndex += samples * 2;
@@ -1023,7 +1020,7 @@ var Lemmings;
                     outIndex++;
                 }
             }
-            // console.log(debug);
+            //console.log(debug);
             return;
         }
         AddSamples_s32(samples, buffer) {
@@ -1087,10 +1084,10 @@ var Lemmings;
             this.volume = (511 << ((9) - 9));
             this.releaseAdd = 0;
         }
-        printDebug() {
-            //console.log(this.OperatorIndex + ": " + this.waveBase + " " + this.waveMask + " " + this.waveStart + " " + this.waveIndex + " " + this.waveAdd + " " + this.waveCurrent + " " + this.chanData + " " + this.freqMul + " " + this.vibrato + " " + this.sustainLevel + " " + this.totalLevel + " " + this.currentLevel + " " + this.volume + " " + this.attackAdd + " " + this.decayAdd + " " + this.releaseAdd + " " + this.rateIndex + " " + this.rateZero + " " + this.keyOn);
-            //console.log(this.reg20 + " " + this.reg40 + " " + this.reg60 + " " + this.reg80 + " " + this.regE0 + " " + this.state + " " + this.tremoloMask + " " + this.vibStrength + " " + this.ksr);
-        }
+        //printDebug() {
+        //  console.log(this.OperatorIndex + ": " + this.waveBase + " " + this.waveMask + " " + this.waveStart + " " + this.waveIndex + " " + this.waveAdd + " " + this.waveCurrent + " " + this.chanData + " " + this.freqMul + " " + this.vibrato + " " + this.sustainLevel + " " + this.totalLevel + " " + this.currentLevel + " " + this.volume + " " + this.attackAdd + " " + this.decayAdd + " " + this.releaseAdd + " " + this.rateIndex + " " + this.rateZero + " " + this.keyOn);
+        //   console.log(this.reg20 + " " + this.reg40 + " " + this.reg60 + " " + this.reg80 + " " + this.regE0 + " " + this.state + " " + this.tremoloMask + " " + this.vibStrength + " " + this.ksr);
+        //}
         SetState(s /**u8  */) {
             this.state = s;
             //this.volHandler = GlobalMembers.VolumeHandlerTable[s];
@@ -1348,7 +1345,7 @@ var Lemmings;
             return this.currentLevel + this.TemplateVolume();
         }
         GetSample(modulation /** Bits */) {
-            this.printDebug();
+            //this.printDebug();
             let vol = this.ForwardVolume();
             if (((vol) >= ((12 * 256) >> (3 - ((9) - 9))))) {
                 //Simply forward the wave
@@ -1421,19 +1418,14 @@ var Lemmings;
             this.dbopl.Init(freq);
         }
         write(reg, val) {
-            console.log("write(" + reg + ", " + val + ")");
+            //console.log("write("+ reg +", "+ val +")");
             this.dbopl.WriteReg(reg, val);
         }
         getBuffer() {
             return this.buffer;
         }
-        //n = 50;
         generate(lenSamples) {
-            //if (this.n< 0) {
-            //	return;
-            //}
-            //this.n --;
-            console.log("generate(" + lenSamples + ")");
+            //console.log( "generate(" + lenSamples + ")");
             if (lenSamples > 512) {
                 throw new Error('OPL.generate() cannot generate more than 512 samples per call');
             }

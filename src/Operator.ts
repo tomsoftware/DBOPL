@@ -65,10 +65,10 @@ module Lemmings {
         public ksr: number; /** u8 */
 
 
-        printDebug() {
-            //console.log(this.OperatorIndex + ": " + this.waveBase + " " + this.waveMask + " " + this.waveStart + " " + this.waveIndex + " " + this.waveAdd + " " + this.waveCurrent + " " + this.chanData + " " + this.freqMul + " " + this.vibrato + " " + this.sustainLevel + " " + this.totalLevel + " " + this.currentLevel + " " + this.volume + " " + this.attackAdd + " " + this.decayAdd + " " + this.releaseAdd + " " + this.rateIndex + " " + this.rateZero + " " + this.keyOn);
-            //console.log(this.reg20 + " " + this.reg40 + " " + this.reg60 + " " + this.reg80 + " " + this.regE0 + " " + this.state + " " + this.tremoloMask + " " + this.vibStrength + " " + this.ksr);
-        }
+        //printDebug() {
+          //  console.log(this.OperatorIndex + ": " + this.waveBase + " " + this.waveMask + " " + this.waveStart + " " + this.waveIndex + " " + this.waveAdd + " " + this.waveCurrent + " " + this.chanData + " " + this.freqMul + " " + this.vibrato + " " + this.sustainLevel + " " + this.totalLevel + " " + this.currentLevel + " " + this.volume + " " + this.attackAdd + " " + this.decayAdd + " " + this.releaseAdd + " " + this.rateIndex + " " + this.rateZero + " " + this.keyOn);
+         //   console.log(this.reg20 + " " + this.reg40 + " " + this.reg60 + " " + this.reg80 + " " + this.regE0 + " " + this.state + " " + this.tremoloMask + " " + this.vibStrength + " " + this.ksr);
+        //}
 
 
         private SetState(s: State /**u8  */): void {
@@ -372,7 +372,7 @@ module Lemmings {
         }
 
         public GetSample(modulation: number /** Bits */): number /** Bits  */ {
-            this.printDebug();
+            //this.printDebug();
             let vol = this.ForwardVolume();
 
             if (((vol) >= ((12 * 256) >> (3 - ((9) - 9))))) {

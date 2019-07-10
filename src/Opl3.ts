@@ -60,7 +60,7 @@ module Lemmings {
 
 
 		public write(reg:number, val:number) {
-			console.log("write("+ reg +", "+ val +")");
+			//console.log("write("+ reg +", "+ val +")");
 			this.dbopl.WriteReg(reg, val);
 		}
 
@@ -70,16 +70,9 @@ module Lemmings {
 			return this.buffer;
 		}
 
-		//n = 50;
-
 		public generate(lenSamples:number)
 		{
-			//if (this.n< 0) {
-			//	return;
-			//}
-			//this.n --;
-			
-			console.log( "generate(" + lenSamples + ")");
+			//console.log( "generate(" + lenSamples + ")");
 
 			if (lenSamples > 512) {
 				throw new Error('OPL.generate() cannot generate more than 512 samples per call');

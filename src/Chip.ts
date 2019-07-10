@@ -303,8 +303,8 @@ module Lemmings {
 
                 let ch = this.chan[0];
                 while (ch.ChannelIndex < 9) {
-                    ch.printDebug();
-                    ch = ch.synthHandler(this, samples, output);
+                    //ch.printDebug();
+                    ch = ch.synthHandler(this, samples, output, outputIndex);
                 }
 
                 total -= samples;
@@ -324,7 +324,7 @@ module Lemmings {
                 //int count = 0;
                 for (let c = 0; c < 18; c++) {
                     //count++;
-                    this.chan[c].synthHandler(this, samples, output);
+                    this.chan[c].synthHandler(this, samples, output, outputIndex);
                 }
                 total -= samples;
                 outputIndex += samples * 2;

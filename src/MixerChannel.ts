@@ -46,7 +46,7 @@ module Lemmings {
                 }
             }
 
-           // console.log(debug);
+            //console.log(debug);
             return;
         }
 

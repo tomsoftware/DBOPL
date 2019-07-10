@@ -1,9 +1,9 @@
 module Lemmings {
 
     export class Channel {
-        printDebug() {
-            //console.log(this.ChannelIndex + ";" + this.chanData + ";" + this.old[0] + ";" + this.old[1] + ";" + this.feedback + ";" + this.regB0 + ";" + this.regC0 + ";" + this.fourMask + ";" + this.maskLeft + ";" + this.maskRight);
-        }
+        //printDebug() {
+          //  console.log(this.ChannelIndex + ";" + this.chanData + ";" + this.old[0] + ";" + this.old[1] + ";" + this.feedback + ";" + this.regB0 + ";" + this.regC0 + ";" + this.fourMask + ";" + this.maskLeft + ";" + this.maskRight);
+        //}
 
         private channels: Channel[];
         public ChannelIndex: number;
@@ -278,7 +278,7 @@ module Lemmings {
 
         /// template<SynthMode mode> Channel* Channel::BlockTemplate( Chip* chip, Bit32u samples, Bit32s* output ) 
         //public BlockTemplate(mode: SynthMode, chip: Chip, samples: number, output: Int32Array /** Bit32s* */): Channel {
-        public synthHandler(chip: Chip, samples: number, output: Int32Array /** Bit32s* */): Channel {
+        public synthHandler(chip: Chip, samples: number, output: Int32Array, outputIndex:number /** Bit32s* */): Channel {
             var mode = this.synthMode;
             switch (mode) {
                 case SynthMode.sm2AM:
@@ -335,11 +335,11 @@ module Lemmings {
             for (let i = 0; i < samples; i++) {
                 //Early out for percussion handlers
                 if (mode == SynthMode.sm2Percussion) {
-                    this.GeneratePercussion(false, chip, output, i);
+                    this.GeneratePercussion(false, chip, output, outputIndex + i);
                     continue;//Prevent some unitialized value bitching
                 }
                 else if (mode == SynthMode.sm3Percussion) {
-                    this.GeneratePercussion(true, chip, output, i * 2);
+                    this.GeneratePercussion(true, chip, output, outputIndex + i * 2);
                     continue;//Prevent some unitialized value bitching
                 }
 
@@ -381,7 +381,7 @@ module Lemmings {
                 switch (mode) {
                     case SynthMode.sm2AM:
                     case SynthMode.sm2FM:
-                        output[i] += sample;
+                        output[outputIndex + i] += sample;
                         break;
                     case SynthMode.sm3AM:
                     case SynthMode.sm3FM:
@@ -389,8 +389,8 @@ module Lemmings {
                     case SynthMode.sm3AMFM:
                     case SynthMode.sm3FMAM:
                     case SynthMode.sm3AMAM:
-                        output[i * 2 + 0] += sample & this.maskLeft;
-                        output[i * 2 + 1] += sample & this.maskRight;
+                        output[outputIndex + i * 2 + 0] += sample & this.maskLeft;
+                        output[outputIndex + i * 2 + 1] += sample & this.maskRight;
                         break;
                 }
             }
