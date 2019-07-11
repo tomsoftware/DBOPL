@@ -1,9 +1,28 @@
-module Lemmings {
+/*
+ *  Copyright (C) 2002-2015  The DOSBox Team
+ *
+ *  This program is free software; you can redistribute it and/or modify
+ *  it under the terms of the GNU General Public License as published by
+ *  the Free Software Foundation; either version 2 of the License, or
+ *  (at your option) any later version.
+ *
+ *  This program is distributed in the hope that it will be useful,
+ *  but WITHOUT ANY WARRANTY; without even the implied warranty of
+ *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ *  GNU General Public License for more details.
+ *
+ *  You should have received a copy of the GNU General Public License
+ *  along with this program; if not, write to the Free Software
+ *  Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
+ */
+
+/* 
+* 2019 - Typescript Version: Thomas Zeugner
+*/
+
+namespace DBOPL {
 
     export class Channel {
-        //printDebug() {
-          //  console.log(this.ChannelIndex + ";" + this.chanData + ";" + this.old[0] + ";" + this.old[1] + ";" + this.feedback + ";" + this.regB0 + ";" + this.regC0 + ";" + this.fourMask + ";" + this.maskLeft + ";" + this.maskRight);
-        //}
 
         private channels: Channel[];
         public ChannelIndex: number;
@@ -16,22 +35,20 @@ module Lemmings {
         private thisOpIndex: number;
 
         public Op(index: number): Operator {
-            //  return &( ( this + (index >> 1) )->op[ index & 1 ]);
             return this.operators[this.thisOpIndex + index];
         }
 
 
-        //public synthHandler: SynthHandler;
         public synthMode: SynthMode;
-        public chanData: number;/** int */
-        public old: Int32Array = new Int32Array(2);/** int */
+        public chanData: number; /** int */
+        public old: Int32Array = new Int32Array(2);
 
-        public feedback: number;/** byte */
-        public regB0: number;/** byte */
-        public regC0: number;/** byte */
+        public feedback: number; /** byte */
+        public regB0: number; /** byte */
+        public regC0: number; /** byte */
 
-        public fourMask: number;/** byte */
-        public maskLeft: number;/** char */
+        public fourMask: number; /** byte */
+        public maskLeft: number; /** char */
         public maskRight: number; /** char */
 
 
@@ -53,7 +70,7 @@ module Lemmings {
             }
         }
 
-        public UpdateFrequency(chip: Chip, fourOp: number /** Bit8u */): void {
+        public UpdateFrequency(chip: Chip, fourOp: number /** UInt8 */): void {
             //Extrace the frequency signed long
             let data = this.chanData & 0xffff;
 
@@ -76,7 +93,7 @@ module Lemmings {
             }
         }
 
-        public WriteA0(chip: Chip, val: number /* Bit8u */): void {
+        public WriteA0(chip: Chip, val: number /* UInt8 */): void {
             let fourOp = (chip.reg104 & chip.opl3Active & this.fourMask);
             //Don't handle writes to silent fourop channels
             if (fourOp > 0x80) {
@@ -89,7 +106,7 @@ module Lemmings {
             }
         }
 
-        public WriteB0(chip: Chip, val: number /* Bit8u */): void {
+        public WriteB0(chip: Chip, val: number /* UInt8 */): void {
             let fourOp = (chip.reg104 & chip.opl3Active & this.fourMask);
             //Don't handle writes to silent fourop channels
             if (fourOp > 0x80) {
@@ -123,7 +140,7 @@ module Lemmings {
             }
         }
 
-        public WriteC0(chip: Chip, val: number /* Bit8u */): void {
+        public WriteC0(chip: Chip, val: number /* UInt8 */): void {
             let change = (val ^ this.regC0);
             if (change == 0) {
                 return;
@@ -216,9 +233,8 @@ module Lemmings {
 
 
         // template< bool opl3Mode> void Channel::GeneratePercussion( Chip* chip, Bit32s* output ) {
-        public GeneratePercussion(opl3Mode: boolean, chip: Chip, output: Int32Array /** Bit32s* */, outputOffset: number): void {
+        public GeneratePercussion(opl3Mode: boolean, chip: Chip, output: Int32Array /* Bit32s */, outputOffset: number): void {
             let chan: Channel = this;
-
 
             //BassDrum
             let mod = ((this.old[0] + this.old[1])) >>> this.feedback;
@@ -278,7 +294,7 @@ module Lemmings {
 
         /// template<SynthMode mode> Channel* Channel::BlockTemplate( Chip* chip, Bit32u samples, Bit32s* output ) 
         //public BlockTemplate(mode: SynthMode, chip: Chip, samples: number, output: Int32Array /** Bit32s* */): Channel {
-        public synthHandler(chip: Chip, samples: number, output: Int32Array, outputIndex:number /** Bit32s* */): Channel {
+        public synthHandler(chip: Chip, samples: number, output: Int32Array, outputIndex: number /** Bit32s* */): Channel {
             var mode = this.synthMode;
             switch (mode) {
                 case SynthMode.sm2AM:
@@ -348,7 +364,7 @@ module Lemmings {
                 let mod = ((this.old[0] + this.old[1])) >>> this.feedback;
                 this.old[0] = this.old[1];
                 this.old[1] = this.Op(0).GetSample(mod);
-                let sample:number;
+                let sample: number;
                 let out0 = this.old[0];
                 if (mode == SynthMode.sm2AM || mode == SynthMode.sm3AM) {
                     sample = out0 + this.Op(1).GetSample(0);
@@ -428,7 +444,6 @@ module Lemmings {
             this.feedback = 31 | 0;
             this.fourMask = 0 | 0;
             this.synthMode = SynthMode.sm2FM;
-            //this.synthHandler = this.BlockTemplate(SynthMode.sm2FM);
         }
     }
 

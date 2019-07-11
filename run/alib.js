@@ -1,8 +1,28 @@
-var Lemmings;
-(function (Lemmings) {
+/*
+ *  Copyright (C) 2002-2015  The DOSBox Team
+ *
+ *  This program is free software; you can redistribute it and/or modify
+ *  it under the terms of the GNU General Public License as published by
+ *  the Free Software Foundation; either version 2 of the License, or
+ *  (at your option) any later version.
+ *
+ *  This program is distributed in the hope that it will be useful,
+ *  but WITHOUT ANY WARRANTY; without even the implied warranty of
+ *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ *  GNU General Public License for more details.
+ *
+ *  You should have received a copy of the GNU General Public License
+ *  along with this program; if not, write to the Free Software
+ *  Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
+ */
+/*
+* 2019 - Typescript Version: Thomas Zeugner
+*/
+var DBOPL;
+(function (DBOPL) {
     class Channel {
         constructor(channels, thisChannel, operators, thisOpIndex) {
-            this.old = new Int32Array(2); /** int */
+            this.old = new Int32Array(2);
             this.channels = channels;
             this.ChannelIndex = thisChannel;
             this.operators = operators;
@@ -15,14 +35,12 @@ var Lemmings;
             this.maskRight = -1 | 0;
             this.feedback = 31 | 0;
             this.fourMask = 0 | 0;
-            this.synthMode = Lemmings.SynthMode.sm2FM;
-            //this.synthHandler = this.BlockTemplate(SynthMode.sm2FM);
+            this.synthMode = DBOPL.SynthMode.sm2FM;
         }
         Channel(index) {
             return this.channels[this.ChannelIndex + index];
         }
         Op(index) {
-            //  return &( ( this + (index >> 1) )->op[ index & 1 ]);
             return this.operators[this.thisOpIndex + index];
         }
         SetChanData(chip, data /** Bit32u */) {
@@ -33,19 +51,19 @@ var Lemmings;
             //Since a frequency update triggered this, always update frequency
             this.Op(0).UpdateFrequency();
             this.Op(1).UpdateFrequency();
-            if ((change & (0xff << Lemmings.Shifts.SHIFT_KSLBASE)) != 0) {
+            if ((change & (0xff << DBOPL.Shifts.SHIFT_KSLBASE)) != 0) {
                 this.Op(0).UpdateAttenuation();
                 this.Op(1).UpdateAttenuation();
             }
-            if ((change & (0xff << Lemmings.Shifts.SHIFT_KEYCODE)) != 0) {
+            if ((change & (0xff << DBOPL.Shifts.SHIFT_KEYCODE)) != 0) {
                 this.Op(0).UpdateRates(chip);
                 this.Op(1).UpdateRates(chip);
             }
         }
-        UpdateFrequency(chip, fourOp /** Bit8u */) {
+        UpdateFrequency(chip, fourOp /** UInt8 */) {
             //Extrace the frequency signed long
             let data = this.chanData & 0xffff;
-            let kslBase = Lemmings.GlobalMembers.KslTable[data >>> 6];
+            let kslBase = DBOPL.GlobalMembers.KslTable[data >>> 6];
             let keyCode = (data & 0x1c00) >>> 9;
             if ((chip.reg08 & 0x40) != 0) {
                 keyCode |= (data & 0x100) >>> 8; /* notesel == 1 */
@@ -54,13 +72,13 @@ var Lemmings;
                 keyCode |= (data & 0x200) >>> 9; /* notesel == 0 */
             }
             //Add the keycode and ksl into the highest signed long of chanData
-            data |= (keyCode << Lemmings.Shifts.SHIFT_KEYCODE) | (kslBase << Lemmings.Shifts.SHIFT_KSLBASE);
+            data |= (keyCode << DBOPL.Shifts.SHIFT_KEYCODE) | (kslBase << DBOPL.Shifts.SHIFT_KSLBASE);
             this.Channel(0).SetChanData(chip, data);
             if ((fourOp & 0x3f) != 0) {
                 this.Channel(1).SetChanData(chip, data);
             }
         }
-        WriteA0(chip, val /* Bit8u */) {
+        WriteA0(chip, val /* UInt8 */) {
             let fourOp = (chip.reg104 & chip.opl3Active & this.fourMask);
             //Don't handle writes to silent fourop channels
             if (fourOp > 0x80) {
@@ -72,7 +90,7 @@ var Lemmings;
                 this.UpdateFrequency(chip, fourOp);
             }
         }
-        WriteB0(chip, val /* Bit8u */) {
+        WriteB0(chip, val /* UInt8 */) {
             let fourOp = (chip.reg104 & chip.opl3Active & this.fourMask);
             //Don't handle writes to silent fourop channels
             if (fourOp > 0x80) {
@@ -105,7 +123,7 @@ var Lemmings;
                 }
             }
         }
-        WriteC0(chip, val /* Bit8u */) {
+        WriteC0(chip, val /* UInt8 */) {
             let change = (val ^ this.regC0);
             if (change == 0) {
                 return;
@@ -138,19 +156,19 @@ var Lemmings;
                     switch (synth) {
                         case 0:
                             //chan0.synthHandler = this.BlockTemplate<SynthMode.sm3FMFM>;
-                            chan0.synthMode = Lemmings.SynthMode.sm3FMFM;
+                            chan0.synthMode = DBOPL.SynthMode.sm3FMFM;
                             break;
                         case 1:
                             //chan0.synthHandler = this.BlockTemplate<SynthMode.sm3AMFM>;
-                            chan0.synthMode = Lemmings.SynthMode.sm3AMFM;
+                            chan0.synthMode = DBOPL.SynthMode.sm3AMFM;
                             break;
                         case 2:
                             //chan0.synthHandler = this.BlockTemplate<SynthMode.sm3FMAM>;
-                            chan0.synthMode = Lemmings.SynthMode.sm3FMAM;
+                            chan0.synthMode = DBOPL.SynthMode.sm3FMAM;
                             break;
                         case 3:
                             //chan0.synthHandler = this.BlockTemplate<SynthMode.sm3AMAM>;
-                            chan0.synthMode = Lemmings.SynthMode.sm3AMAM;
+                            chan0.synthMode = DBOPL.SynthMode.sm3AMAM;
                             break;
                     }
                     //Disable updating percussion channels
@@ -160,11 +178,11 @@ var Lemmings;
                 }
                 else if (val & 1) {
                     //this.synthHandler = this.BlockTemplate<SynthMode.sm3AM>;
-                    this.synthMode = Lemmings.SynthMode.sm3AM;
+                    this.synthMode = DBOPL.SynthMode.sm3AM;
                 }
                 else {
                     //this.synthHandler = this.BlockTemplate<SynthMode.sm3FM>;
-                    this.synthMode = Lemmings.SynthMode.sm3FM;
+                    this.synthMode = DBOPL.SynthMode.sm3FM;
                 }
                 this.maskLeft = (val & 0x10) != 0 ? -1 : 0;
                 this.maskRight = (val & 0x20) != 0 ? -1 : 0;
@@ -177,11 +195,11 @@ var Lemmings;
                 }
                 else if (val & 1) {
                     //this.synthHandler = this.BlockTemplate<SynthMode.sm2AM>;
-                    this.synthMode = Lemmings.SynthMode.sm2AM;
+                    this.synthMode = DBOPL.SynthMode.sm2AM;
                 }
                 else {
                     //this.synthHandler = this.BlockTemplate<SynthMode.sm2FM>;
-                    this.synthMode = Lemmings.SynthMode.sm2FM;
+                    this.synthMode = DBOPL.SynthMode.sm2FM;
                 }
             }
         }
@@ -191,7 +209,7 @@ var Lemmings;
             this.WriteC0(chip, val);
         }
         // template< bool opl3Mode> void Channel::GeneratePercussion( Chip* chip, Bit32s* output ) {
-        GeneratePercussion(opl3Mode, chip, output /** Bit32s* */, outputOffset) {
+        GeneratePercussion(opl3Mode, chip, output /* Bit32s */, outputOffset) {
             let chan = this;
             //BassDrum
             let mod = ((this.old[0] + this.old[1])) >>> this.feedback;
@@ -244,39 +262,39 @@ var Lemmings;
         synthHandler(chip, samples, output, outputIndex /** Bit32s* */) {
             var mode = this.synthMode;
             switch (mode) {
-                case Lemmings.SynthMode.sm2AM:
-                case Lemmings.SynthMode.sm3AM:
+                case DBOPL.SynthMode.sm2AM:
+                case DBOPL.SynthMode.sm3AM:
                     if (this.Op(0).Silent() && this.Op(1).Silent()) {
                         this.old[0] = this.old[1] = 0;
                         return this.Channel(1);
                     }
                     break;
-                case Lemmings.SynthMode.sm2FM:
-                case Lemmings.SynthMode.sm3FM:
+                case DBOPL.SynthMode.sm2FM:
+                case DBOPL.SynthMode.sm3FM:
                     if (this.Op(1).Silent()) {
                         this.old[0] = this.old[1] = 0;
                         return this.Channel(1);
                     }
                     break;
-                case Lemmings.SynthMode.sm3FMFM:
+                case DBOPL.SynthMode.sm3FMFM:
                     if (this.Op(3).Silent()) {
                         this.old[0] = this.old[1] = 0;
                         return this.Channel(2);
                     }
                     break;
-                case Lemmings.SynthMode.sm3AMFM:
+                case DBOPL.SynthMode.sm3AMFM:
                     if (this.Op(0).Silent() && this.Op(3).Silent()) {
                         this.old[0] = this.old[1] = 0;
                         return this.Channel(2);
                     }
                     break;
-                case Lemmings.SynthMode.sm3FMAM:
+                case DBOPL.SynthMode.sm3FMAM:
                     if (this.Op(1).Silent() && this.Op(3).Silent()) {
                         this.old[0] = this.old[1] = 0;
                         return this.Channel(2);
                     }
                     break;
-                case Lemmings.SynthMode.sm3AMAM:
+                case DBOPL.SynthMode.sm3AMAM:
                     if (this.Op(0).Silent() && this.Op(2).Silent() && this.Op(3).Silent()) {
                         this.old[0] = this.old[1] = 0;
                         return this.Channel(2);
@@ -286,21 +304,21 @@ var Lemmings;
             //Init the operators with the the current vibrato and tremolo values
             this.Op(0).Prepare(chip);
             this.Op(1).Prepare(chip);
-            if (mode > Lemmings.SynthMode.sm4Start) {
+            if (mode > DBOPL.SynthMode.sm4Start) {
                 this.Op(2).Prepare(chip);
                 this.Op(3).Prepare(chip);
             }
-            if (mode > Lemmings.SynthMode.sm6Start) {
+            if (mode > DBOPL.SynthMode.sm6Start) {
                 this.Op(4).Prepare(chip);
                 this.Op(5).Prepare(chip);
             }
             for (let i = 0; i < samples; i++) {
                 //Early out for percussion handlers
-                if (mode == Lemmings.SynthMode.sm2Percussion) {
+                if (mode == DBOPL.SynthMode.sm2Percussion) {
                     this.GeneratePercussion(false, chip, output, outputIndex + i);
                     continue; //Prevent some unitialized value bitching
                 }
-                else if (mode == Lemmings.SynthMode.sm3Percussion) {
+                else if (mode == DBOPL.SynthMode.sm3Percussion) {
                     this.GeneratePercussion(true, chip, output, outputIndex + i * 2);
                     continue; //Prevent some unitialized value bitching
                 }
@@ -310,101 +328,120 @@ var Lemmings;
                 this.old[1] = this.Op(0).GetSample(mod);
                 let sample;
                 let out0 = this.old[0];
-                if (mode == Lemmings.SynthMode.sm2AM || mode == Lemmings.SynthMode.sm3AM) {
+                if (mode == DBOPL.SynthMode.sm2AM || mode == DBOPL.SynthMode.sm3AM) {
                     sample = out0 + this.Op(1).GetSample(0);
                 }
-                else if (mode == Lemmings.SynthMode.sm2FM || mode == Lemmings.SynthMode.sm3FM) {
+                else if (mode == DBOPL.SynthMode.sm2FM || mode == DBOPL.SynthMode.sm3FM) {
                     sample = this.Op(1).GetSample(out0);
                 }
-                else if (mode == Lemmings.SynthMode.sm3FMFM) {
+                else if (mode == DBOPL.SynthMode.sm3FMFM) {
                     let next = this.Op(1).GetSample(out0);
                     next = this.Op(2).GetSample(next);
                     sample = this.Op(3).GetSample(next);
                 }
-                else if (mode == Lemmings.SynthMode.sm3AMFM) {
+                else if (mode == DBOPL.SynthMode.sm3AMFM) {
                     sample = out0;
                     let next = this.Op(1).GetSample(0);
                     next = this.Op(2).GetSample(next);
                     sample += this.Op(3).GetSample(next);
                 }
-                else if (mode == Lemmings.SynthMode.sm3FMAM) {
+                else if (mode == DBOPL.SynthMode.sm3FMAM) {
                     sample = this.Op(1).GetSample(out0);
                     let next = this.Op(2).GetSample(0);
                     sample += this.Op(3).GetSample(next);
                 }
-                else if (mode == Lemmings.SynthMode.sm3AMAM) {
+                else if (mode == DBOPL.SynthMode.sm3AMAM) {
                     sample = out0;
                     let next = this.Op(1).GetSample(0);
                     sample += this.Op(2).GetSample(next);
                     sample += this.Op(3).GetSample(0);
                 }
                 switch (mode) {
-                    case Lemmings.SynthMode.sm2AM:
-                    case Lemmings.SynthMode.sm2FM:
+                    case DBOPL.SynthMode.sm2AM:
+                    case DBOPL.SynthMode.sm2FM:
                         output[outputIndex + i] += sample;
                         break;
-                    case Lemmings.SynthMode.sm3AM:
-                    case Lemmings.SynthMode.sm3FM:
-                    case Lemmings.SynthMode.sm3FMFM:
-                    case Lemmings.SynthMode.sm3AMFM:
-                    case Lemmings.SynthMode.sm3FMAM:
-                    case Lemmings.SynthMode.sm3AMAM:
+                    case DBOPL.SynthMode.sm3AM:
+                    case DBOPL.SynthMode.sm3FM:
+                    case DBOPL.SynthMode.sm3FMFM:
+                    case DBOPL.SynthMode.sm3AMFM:
+                    case DBOPL.SynthMode.sm3FMAM:
+                    case DBOPL.SynthMode.sm3AMAM:
                         output[outputIndex + i * 2 + 0] += sample & this.maskLeft;
                         output[outputIndex + i * 2 + 1] += sample & this.maskRight;
                         break;
                 }
             }
             switch (mode) {
-                case Lemmings.SynthMode.sm2AM:
-                case Lemmings.SynthMode.sm2FM:
-                case Lemmings.SynthMode.sm3AM:
-                case Lemmings.SynthMode.sm3FM:
+                case DBOPL.SynthMode.sm2AM:
+                case DBOPL.SynthMode.sm2FM:
+                case DBOPL.SynthMode.sm3AM:
+                case DBOPL.SynthMode.sm3FM:
                     return this.Channel(1);
-                case Lemmings.SynthMode.sm3FMFM:
-                case Lemmings.SynthMode.sm3AMFM:
-                case Lemmings.SynthMode.sm3FMAM:
-                case Lemmings.SynthMode.sm3AMAM:
+                case DBOPL.SynthMode.sm3FMFM:
+                case DBOPL.SynthMode.sm3AMFM:
+                case DBOPL.SynthMode.sm3FMAM:
+                case DBOPL.SynthMode.sm3AMAM:
                     return this.Channel(2);
-                case Lemmings.SynthMode.sm2Percussion:
-                case Lemmings.SynthMode.sm3Percussion:
+                case DBOPL.SynthMode.sm2Percussion:
+                case DBOPL.SynthMode.sm3Percussion:
                     return this.Channel(3);
             }
             return null;
         }
     }
-    Lemmings.Channel = Channel;
-})(Lemmings || (Lemmings = {}));
-var Lemmings;
-(function (Lemmings) {
+    DBOPL.Channel = Channel;
+})(DBOPL || (DBOPL = {}));
+/*
+ *  Copyright (C) 2002-2015  The DOSBox Team
+ *
+ *  This program is free software; you can redistribute it and/or modify
+ *  it under the terms of the GNU General Public License as published by
+ *  the Free Software Foundation; either version 2 of the License, or
+ *  (at your option) any later version.
+ *
+ *  This program is distributed in the hope that it will be useful,
+ *  but WITHOUT ANY WARRANTY; without even the implied warranty of
+ *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ *  GNU General Public License for more details.
+ *
+ *  You should have received a copy of the GNU General Public License
+ *  along with this program; if not, write to the Free Software
+ *  Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
+ */
+/*
+* 2019 - Typescript Version: Thomas Zeugner
+*/
+var DBOPL;
+(function (DBOPL) {
     class Chip {
         constructor() {
             /// Frequency scales for the different multiplications
-            this.freqMul = new Uint32Array(16); //Bit32u[16];
+            this.freqMul = new Uint32Array(16);
             /// Rates for decay and release for rate of this chip
-            this.linearRates = new Int32Array(76); //new int[76];
+            this.linearRates = new Int32Array(76);
             /// Best match attack rates for the rate of this chip
-            this.attackRates = new Int32Array(76); //new int[76];
+            this.attackRates = new Int32Array(76);
             this.reg08 = 0;
             this.reg04 = 0;
             this.regBD = 0;
             this.reg104 = 0;
             this.opl3Active = 0;
             const ChannelCount = 18;
-            this.chan = new Array(ChannelCount); // new Channel[18];
-            this.op = new Array(2 * ChannelCount); // new Operator[18 * 2]
+            this.chan = new Array(ChannelCount);
+            this.op = new Array(2 * ChannelCount);
             for (let i = 0; i < this.op.length; i++) {
-                this.op[i] = new Lemmings.Operator();
-                this.op[i].OperatorIndex = i;
+                this.op[i] = new DBOPL.Operator();
             }
             for (let i = 0; i < ChannelCount; i++) {
-                this.chan[i] = new Lemmings.Channel(this.chan, i, this.op, i * 2);
+                this.chan[i] = new DBOPL.Channel(this.chan, i, this.op, i * 2);
             }
         }
-        ForwardLFO(samples /* Bit32u */) {
+        ForwardLFO(samples /* UInt32 */) {
             //Current vibrato value, runs 4x slower than tremolo
-            this.vibratoSign = (Lemmings.GlobalMembers.VibratoTable[this.vibratoIndex >>> 2]) >> 7;
-            this.vibratoShift = ((Lemmings.GlobalMembers.VibratoTable[this.vibratoIndex >>> 2] & 7) + this.vibratoStrength) | 0;
-            this.tremoloValue = (Lemmings.GlobalMembers.TremoloTable[this.tremoloIndex] >>> this.tremoloStrength) | 0;
+            this.vibratoSign = (DBOPL.GlobalMembers.VibratoTable[this.vibratoIndex >>> 2]) >> 7;
+            this.vibratoShift = ((DBOPL.GlobalMembers.VibratoTable[this.vibratoIndex >>> 2] & 7) + this.vibratoStrength) | 0;
+            this.tremoloValue = (DBOPL.GlobalMembers.TremoloTable[this.tremoloIndex] >>> this.tremoloStrength) | 0;
             //Check hom many samples there can be done before the value changes
             let todo = ((256 << (((32 - 10) - 10))) - this.lfoCounter) | 0;
             let count = ((todo + this.lfoAdd - 1) / this.lfoAdd) | 0;
@@ -418,7 +455,7 @@ var Lemmings;
                 //Maximum of 7 vibrato value * 4
                 this.vibratoIndex = (this.vibratoIndex + 1) & 31;
                 //Clip tremolo to the the table size
-                if (this.tremoloIndex + 1 < Lemmings.GlobalMembers.TREMOLO_TABLE) {
+                if (this.tremoloIndex + 1 < DBOPL.GlobalMembers.TREMOLO_TABLE) {
                     ++this.tremoloIndex;
                 }
                 else {
@@ -438,7 +475,7 @@ var Lemmings;
             }
             return this.noiseValue;
         }
-        WriteBD(val /* Bit8u */) {
+        WriteBD(val /* UInt8 */) {
             let change = this.regBD ^ val;
             if (change == 0) {
                 return;
@@ -452,11 +489,11 @@ var Lemmings;
                 if ((change & 0x20) != 0) {
                     if (this.opl3Active) {
                         //this.chan[6].synthHandler = & Channel.BlockTemplate < SynthMode.sm3Percussion >;
-                        this.chan[6].synthMode = Lemmings.SynthMode.sm3Percussion;
+                        this.chan[6].synthMode = DBOPL.SynthMode.sm3Percussion;
                     }
                     else {
                         //this.chan[6].synthHandler = & Channel.BlockTemplate < SynthMode.sm2Percussion >;
-                        this.chan[6].synthMode = Lemmings.SynthMode.sm2Percussion;
+                        this.chan[6].synthMode = DBOPL.SynthMode.sm2Percussion;
                     }
                 }
                 //Bass Drum
@@ -604,7 +641,7 @@ var Lemmings;
                     break;
             }
         }
-        WriteAddr(port /* Bit32u */, val /* byte */) {
+        WriteAddr(port /* UInt32 */, val /* byte */) {
             switch (port & 3) {
                 case 0:
                     return val;
@@ -618,7 +655,7 @@ var Lemmings;
             }
             return 0;
         }
-        GenerateBlock2(total /* Bitu */, output /*  Bit32s* */) {
+        GenerateBlock2(total /* UInt32 */, output /*  Int32 */) {
             let outputIndex = 0;
             while (total > 0) {
                 let samples = this.ForwardLFO(total);
@@ -633,10 +670,10 @@ var Lemmings;
                 outputIndex += samples;
             }
         }
-        GenerateBlock3(total /* Bitu */, output /* Bit32s* */) {
+        GenerateBlock3(total /* UInt32 */, output /* Int32 */) {
             let outputIndex = 0;
             while (total > 0) {
-                let samples = this.ForwardLFO(total); /** Bit32u */
+                let samples = this.ForwardLFO(total);
                 output.fill(0, outputIndex, outputIndex + samples * 2);
                 //int count = 0;
                 for (let c = 0; c < 18; c++) {
@@ -647,9 +684,9 @@ var Lemmings;
                 outputIndex += samples * 2;
             }
         }
-        Setup(rate /* Bit32u */) {
+        Setup(rate /* UInt32 */) {
             this.InitTables();
-            let scale = Lemmings.GlobalMembers.OPLRATE / rate;
+            let scale = DBOPL.GlobalMembers.OPLRATE / rate;
             //Noise counter is run at the same precision as general waves
             this.noiseAdd = (0.5 + scale * (1 << ((32 - 10) - 10))) | 0;
             this.noiseCounter = 0 | 0;
@@ -664,21 +701,21 @@ var Lemmings;
             //-1 since the freqCreateTable = *2
             let freqScale = (0.5 + scale * (1 << ((32 - 10) - 1 - 10))) | 0;
             for (let i = 0; i < 16; i++) {
-                this.freqMul[i] = (freqScale * Lemmings.GlobalMembers.FreqCreateTable[i]) | 0;
+                this.freqMul[i] = (freqScale * DBOPL.GlobalMembers.FreqCreateTable[i]) | 0;
             }
             //-3 since the real envelope takes 8 steps to reach the single value we supply
             for (let i = 0; i < 76; i++) {
-                let index = Lemmings.GlobalMembers.EnvelopeSelectIndex(i);
-                let shift = Lemmings.GlobalMembers.EnvelopeSelectShift(i);
-                this.linearRates[i] = (scale * (Lemmings.GlobalMembers.EnvelopeIncreaseTable[index] << (24 + ((9) - 9) - shift - 3))) | 0;
+                let index = DBOPL.GlobalMembers.EnvelopeSelectIndex(i);
+                let shift = DBOPL.GlobalMembers.EnvelopeSelectShift(i);
+                this.linearRates[i] = (scale * (DBOPL.GlobalMembers.EnvelopeIncreaseTable[index] << (24 + ((9) - 9) - shift - 3))) | 0;
             }
             //Generate the best matching attack rate
             for (let i = 0; i < 62; i++) {
-                let index = Lemmings.GlobalMembers.EnvelopeSelectIndex(i);
-                let shift = Lemmings.GlobalMembers.EnvelopeSelectShift(i);
+                let index = DBOPL.GlobalMembers.EnvelopeSelectIndex(i);
+                let shift = DBOPL.GlobalMembers.EnvelopeSelectShift(i);
                 //Original amount of samples the attack would take
-                let original = ((Lemmings.GlobalMembers.AttackSamplesTable[index] << shift) / scale) | 0;
-                let guessAdd = (scale * (Lemmings.GlobalMembers.EnvelopeIncreaseTable[index] << (24 - shift - 3))) | 0;
+                let original = ((DBOPL.GlobalMembers.AttackSamplesTable[index] << shift) / scale) | 0;
+                let guessAdd = (scale * (DBOPL.GlobalMembers.EnvelopeIncreaseTable[index] << (24 - shift - 3))) | 0;
                 let bestAdd = guessAdd;
                 let bestDiff = 1 << 30;
                 for (let passes = 0; passes < 16; passes++) {
@@ -758,22 +795,42 @@ var Lemmings;
             }
         }
         InitTables() {
-            this.OpTable = new Array(Lemmings.GlobalMembers.OpOffsetTable.length);
-            for (let i = 0; i < Lemmings.GlobalMembers.OpOffsetTable.length; i++) {
-                this.OpTable[i] = this.op[Lemmings.GlobalMembers.OpOffsetTable[i]];
+            this.OpTable = new Array(DBOPL.GlobalMembers.OpOffsetTable.length);
+            for (let i = 0; i < DBOPL.GlobalMembers.OpOffsetTable.length; i++) {
+                this.OpTable[i] = this.op[DBOPL.GlobalMembers.OpOffsetTable[i]];
             }
-            this.ChanTable = new Array(Lemmings.GlobalMembers.ChanOffsetTable.length);
-            for (let i = 0; i < Lemmings.GlobalMembers.ChanOffsetTable.length; i++) {
-                this.ChanTable[i] = this.chan[Lemmings.GlobalMembers.ChanOffsetTable[i]];
+            this.ChanTable = new Array(DBOPL.GlobalMembers.ChanOffsetTable.length);
+            for (let i = 0; i < DBOPL.GlobalMembers.ChanOffsetTable.length; i++) {
+                this.ChanTable[i] = this.chan[DBOPL.GlobalMembers.ChanOffsetTable[i]];
             }
         }
     }
-    Lemmings.Chip = Chip;
-})(Lemmings || (Lemmings = {}));
-var Lemmings;
-(function (Lemmings) {
+    DBOPL.Chip = Chip;
+})(DBOPL || (DBOPL = {}));
+/*
+ *  Copyright (C) 2002-2015  The DOSBox Team
+ *
+ *  This program is free software; you can redistribute it and/or modify
+ *  it under the terms of the GNU General Public License as published by
+ *  the Free Software Foundation; either version 2 of the License, or
+ *  (at your option) any later version.
+ *
+ *  This program is distributed in the hope that it will be useful,
+ *  but WITHOUT ANY WARRANTY; without even the implied warranty of
+ *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ *  GNU General Public License for more details.
+ *
+ *  You should have received a copy of the GNU General Public License
+ *  along with this program; if not, write to the Free Software
+ *  Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
+ */
+/*
+* 2019 - Typescript Version: Thomas Zeugner
+*/
+var DBOPL;
+(function (DBOPL) {
     class GlobalMembers {
-        static EnvelopeSelectShift(val /* Bit8u  */) {
+        static EnvelopeSelectShift(val /* UInt8  */) {
             if (val < 13 * 4) {
                 return 12 - (val >>> 2);
             }
@@ -784,7 +841,7 @@ var Lemmings;
                 return 0;
             }
         }
-        static EnvelopeSelectIndex(val /* Bit8u  */) {
+        static EnvelopeSelectIndex(val /* UInt8  */) {
             if (val < 13 * 4) {
                 return (val & 3);
             }
@@ -896,24 +953,24 @@ var Lemmings;
         16, 12, 11, 10,
         8, 6, 5, 4,
         3, 2, 1, 0
-    ]); /* Bit8u[]*/
+    ]); /* UInt8[]*/
     GlobalMembers.FreqCreateTable = new Uint8Array([
         (0.5 * 2), (1 * 2), (2 * 2), (3 * 2), (4 * 2), (5 * 2), (6 * 2), (7 * 2),
         (8 * 2), (9 * 2), (10 * 2), (10 * 2), (12 * 2), (12 * 2), (15 * 2), (15 * 2)
-    ]); /** final Bit8u[]  */
+    ]); /** final UInt8[]  */
     /// We're not including the highest attack rate, that gets a special value
     GlobalMembers.AttackSamplesTable = new Uint8Array([
         69, 55, 46, 40,
         35, 29, 23, 20,
         19, 15, 11, 10,
         9
-    ]); /** Bit8u */
+    ]); /** UInt8 */
     GlobalMembers.EnvelopeIncreaseTable = new Uint8Array([
         4, 5, 6, 7,
         8, 10, 12, 14,
         16, 20, 24, 28,
         32
-    ]); /** Bit8u */
+    ]); /** UInt8 */
     /// Layout of the waveform table in 512 entry intervals
     /// With overlapping waves we reduce the table to half it's size
     /// 	|    |//\\|____|WAV7|//__|/\  |____|/\/\|
@@ -924,49 +981,69 @@ var Lemmings;
     GlobalMembers.WaveBaseTable = new Uint16Array([
         0x000, 0x200, 0x200, 0x800,
         0xa00, 0xc00, 0x100, 0x400
-    ]); /** Bit16u */
+    ]); /** UInt16 */
     GlobalMembers.WaveMaskTable = new Uint16Array([
         1023, 1023, 511, 511,
         1023, 1023, 512, 1023
-    ]); /** Bit16u */
+    ]); /** UInt16 */
     /// Where to start the counter on at keyon
     GlobalMembers.WaveStartTable = new Uint16Array([
         512, 0, 0, 0,
         0, 512, 512, 256
-    ]); /** Bit16u */
-    GlobalMembers.MulTable = new Uint16Array(384); /** Bit16u[] */
+    ]); /** UInt16 */
+    GlobalMembers.MulTable = new Uint16Array(384); /** UInt16[] */
     GlobalMembers.TREMOLO_TABLE = 52;
-    GlobalMembers.KslTable = new Uint8Array(8 * 16); /** Bit8u[] */
-    GlobalMembers.TremoloTable = new Uint8Array(GlobalMembers.TREMOLO_TABLE); /** Bit8u[] */
+    GlobalMembers.KslTable = new Uint8Array(8 * 16); /** UInt8[] */
+    GlobalMembers.TremoloTable = new Uint8Array(GlobalMembers.TREMOLO_TABLE); /** UInt8[] */
     //Start of a channel behind the chip struct start
-    GlobalMembers.ChanOffsetTable = new Int16Array(32); /** Bit16u[] */
+    GlobalMembers.ChanOffsetTable = new Int16Array(32); /** UInt16[] */
     //Start of an operator behind the chip struct start
-    GlobalMembers.OpOffsetTable = new Int16Array(64); /** Bit16u[] */
+    GlobalMembers.OpOffsetTable = new Int16Array(64); /** UInt16[] */
     //The lower bits are the shift of the operator vibrato value
     //The highest bit is right shifted to generate -1 or 0 for negation
     //So taking the highest input value of 7 this gives 3, 7, 3, 0, -3, -7, -3, 0
     GlobalMembers.VibratoTable = new Int8Array([
         1 - 0x00, 0 - 0x00, 1 - 0x00, 30 - 0x00,
         1 - 0x80, 0 - 0x80, 1 - 0x80, 30 - 0x80
-    ]); /** Bit8s */
+    ]); /** Int8 */
     //Shift strength for the ksl value determined by ksl strength
-    GlobalMembers.KslShiftTable = new Uint8Array([31, 1, 2, 0]); /** Bit8u */
+    GlobalMembers.KslShiftTable = new Uint8Array([31, 1, 2, 0]); /** UInt8 */
     GlobalMembers.doneTables = false;
-    Lemmings.GlobalMembers = GlobalMembers;
-})(Lemmings || (Lemmings = {}));
-var Lemmings;
-(function (Lemmings) {
+    DBOPL.GlobalMembers = GlobalMembers;
+})(DBOPL || (DBOPL = {}));
+/*
+ *  Copyright (C) 2002-2015  The DOSBox Team
+ *
+ *  This program is free software; you can redistribute it and/or modify
+ *  it under the terms of the GNU General Public License as published by
+ *  the Free Software Foundation; either version 2 of the License, or
+ *  (at your option) any later version.
+ *
+ *  This program is distributed in the hope that it will be useful,
+ *  but WITHOUT ANY WARRANTY; without even the implied warranty of
+ *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ *  GNU General Public License for more details.
+ *
+ *  You should have received a copy of the GNU General Public License
+ *  along with this program; if not, write to the Free Software
+ *  Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
+ */
+/*
+* 2019 - Typescript Version: Thomas Zeugner
+*/
+var DBOPL;
+(function (DBOPL) {
     class Handler {
         constructor() {
-            this.chip = new Lemmings.Chip();
+            this.chip = new DBOPL.Chip();
         }
-        WriteAddr(port /* int*/, val /* byte */) {
+        WriteAddr(port /* int */, val /* byte */) {
             return this.chip.WriteAddr(port, val);
         }
-        WriteReg(addr /** int */, val /** byte */) {
+        WriteReg(addr /* int */, val /* byte */) {
             this.chip.WriteReg(addr, val);
         }
-        Generate(chan, samples /** short */) {
+        Generate(chan, samples /* short */) {
             let buffer = new Int32Array(512 * 2);
             if ((samples > 512)) {
                 samples = 512;
@@ -980,15 +1057,35 @@ var Lemmings;
                 chan.AddSamples_s32(samples, buffer);
             }
         }
-        Init(rate /** short */) {
-            Lemmings.GlobalMembers.InitTables();
+        Init(rate /* short */) {
+            DBOPL.GlobalMembers.InitTables();
             this.chip.Setup(rate);
         }
     }
-    Lemmings.Handler = Handler;
-})(Lemmings || (Lemmings = {}));
-var Lemmings;
-(function (Lemmings) {
+    DBOPL.Handler = Handler;
+})(DBOPL || (DBOPL = {}));
+/*
+ *  Copyright (C) 2002-2015  The DOSBox Team
+ *
+ *  This program is free software; you can redistribute it and/or modify
+ *  it under the terms of the GNU General Public License as published by
+ *  the Free Software Foundation; either version 2 of the License, or
+ *  (at your option) any later version.
+ *
+ *  This program is distributed in the hope that it will be useful,
+ *  but WITHOUT ANY WARRANTY; without even the implied warranty of
+ *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ *  GNU General Public License for more details.
+ *
+ *  You should have received a copy of the GNU General Public License
+ *  along with this program; if not, write to the Free Software
+ *  Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
+ */
+/*
+* 2019 - Typescript Version: Thomas Zeugner
+*/
+var DBOPL;
+(function (DBOPL) {
     class MixerChannel {
         constructor(buffer, channels) {
             this.buffer = buffer;
@@ -1004,23 +1101,26 @@ var Lemmings;
         AddSamples_m32(samples, buffer) {
             // Volume amplication (0 == none, 1 == 2x, 2 == 4x)
             const VOL_AMP = 1;
-            // Convert samples from mono s32 to stereo s16
+            // Convert samples from mono int32 to stereo int16
             let out = this.buffer;
             let outIndex = 0;
             let ch = this.channels;
-            let debug = "";
-            for (let i = 0; i < samples; i++) {
-                debug += buffer[i] + ">";
-                let v = buffer[i] << VOL_AMP;
-                out[outIndex] = this.CLIP(v);
-                debug += out[outIndex] + "|";
-                outIndex++;
-                if (ch == 2) {
+            if (ch == 2) {
+                for (let i = 0; i < samples; i++) {
+                    let v = this.CLIP(buffer[i] << VOL_AMP);
+                    out[outIndex] = v;
+                    outIndex++;
+                    out[outIndex] = v;
+                    outIndex++;
+                }
+            }
+            else {
+                for (let i = 0; i < samples; i++) {
+                    let v = buffer[i] << VOL_AMP;
                     out[outIndex] = this.CLIP(v);
                     outIndex++;
                 }
             }
-            //console.log(debug);
             return;
         }
         AddSamples_s32(samples, buffer) {
@@ -1030,12 +1130,19 @@ var Lemmings;
             let out = this.buffer;
             let outIndex = 0;
             let ch = this.channels;
-            for (let i = 0; i < samples; i++) {
-                let v = buffer[i * 2] << VOL_AMP;
-                out[outIndex] = this.CLIP(v);
-                outIndex++;
-                if (ch == 2) {
+            if (ch == 2) {
+                for (let i = 0; i < samples; i++) {
+                    let v = buffer[i * 2] << VOL_AMP;
+                    out[outIndex] = this.CLIP(v);
+                    outIndex++;
                     v = buffer[i * 2 + 1] << VOL_AMP;
+                    out[outIndex] = this.CLIP(v);
+                    outIndex++;
+                }
+            }
+            else {
+                for (let i = 0; i < samples; i++) {
+                    let v = buffer[i * 2] << VOL_AMP;
                     out[outIndex] = this.CLIP(v);
                     outIndex++;
                 }
@@ -1043,10 +1150,30 @@ var Lemmings;
             return;
         }
     }
-    Lemmings.MixerChannel = MixerChannel;
-})(Lemmings || (Lemmings = {}));
-var Lemmings;
-(function (Lemmings) {
+    DBOPL.MixerChannel = MixerChannel;
+})(DBOPL || (DBOPL = {}));
+/*
+ *  Copyright (C) 2002-2015  The DOSBox Team
+ *
+ *  This program is free software; you can redistribute it and/or modify
+ *  it under the terms of the GNU General Public License as published by
+ *  the Free Software Foundation; either version 2 of the License, or
+ *  (at your option) any later version.
+ *
+ *  This program is distributed in the hope that it will be useful,
+ *  but WITHOUT ANY WARRANTY; without even the implied warranty of
+ *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ *  GNU General Public License for more details.
+ *
+ *  You should have received a copy of the GNU General Public License
+ *  along with this program; if not, write to the Free Software
+ *  Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
+ */
+/*
+* 2019 - Typescript Version: Thomas Zeugner
+*/
+var DBOPL;
+(function (DBOPL) {
     var Operator20Masks;
     (function (Operator20Masks) {
         Operator20Masks[Operator20Masks["MASK_KSR"] = 16] = "MASK_KSR";
@@ -1084,19 +1211,14 @@ var Lemmings;
             this.volume = (511 << ((9) - 9));
             this.releaseAdd = 0;
         }
-        //printDebug() {
-        //  console.log(this.OperatorIndex + ": " + this.waveBase + " " + this.waveMask + " " + this.waveStart + " " + this.waveIndex + " " + this.waveAdd + " " + this.waveCurrent + " " + this.chanData + " " + this.freqMul + " " + this.vibrato + " " + this.sustainLevel + " " + this.totalLevel + " " + this.currentLevel + " " + this.volume + " " + this.attackAdd + " " + this.decayAdd + " " + this.releaseAdd + " " + this.rateIndex + " " + this.rateZero + " " + this.keyOn);
-        //   console.log(this.reg20 + " " + this.reg40 + " " + this.reg60 + " " + this.reg80 + " " + this.regE0 + " " + this.state + " " + this.tremoloMask + " " + this.vibStrength + " " + this.ksr);
-        //}
-        SetState(s /**u8  */) {
+        SetState(s /** Int8 */) {
             this.state = s;
-            //this.volHandler = GlobalMembers.VolumeHandlerTable[s];
         }
         //We zero out when rate == 0
         UpdateAttack(chip) {
-            let rate = this.reg60 >>> 4; /** Bit8u */
+            let rate = this.reg60 >>> 4; /** UInt8 */
             if (rate != 0) {
-                let val = ((rate << 2) + this.ksr) | 0; /** Bit8u */
+                let val = ((rate << 2) + this.ksr) | 0; /** UInt8 */
                 ;
                 this.attackAdd = chip.attackRates[val];
                 this.rateZero &= ~(1 << State.ATTACK);
@@ -1137,17 +1259,17 @@ var Lemmings;
             }
         }
         UpdateAttenuation() {
-            let kslBase = ((this.chanData >>> Lemmings.Shifts.SHIFT_KSLBASE) & 0xff);
+            let kslBase = ((this.chanData >>> DBOPL.Shifts.SHIFT_KSLBASE) & 0xff);
             let tl = this.reg40 & 0x3f;
-            let kslShift = Lemmings.GlobalMembers.KslShiftTable[this.reg40 >>> 6];
-            //Make sure the attenuation goes to the right bits
+            let kslShift = DBOPL.GlobalMembers.KslShiftTable[this.reg40 >>> 6];
+            //Make sure the attenuation goes to the right Int32
             this.totalLevel = tl << ((9) - 7);
             this.totalLevel += (kslBase << ((9) - 9)) >> kslShift;
         }
         UpdateRates(chip) {
             //Mame seems to reverse this where enabling ksr actually lowers
             //the rate, but pdf manuals says otherwise?
-            let newKsr = ((this.chanData >>> Lemmings.Shifts.SHIFT_KEYCODE) & 0xff);
+            let newKsr = ((this.chanData >>> DBOPL.Shifts.SHIFT_KEYCODE) & 0xff);
             if ((this.reg20 & Operator20Masks.MASK_KSR) == 0) {
                 newKsr >>>= 2;
             }
@@ -1172,7 +1294,7 @@ var Lemmings;
                 this.vibrato = 0;
             }
         }
-        Write20(chip, val /** u8 */) {
+        Write20(chip, val /** Int8 */) {
             let change = (this.reg20 ^ val);
             if (change == 0) {
                 return;
@@ -1198,14 +1320,14 @@ var Lemmings;
                 this.UpdateFrequency();
             }
         }
-        Write40(chip, val /** u8 */) {
+        Write40(chip, val /** Int8 */) {
             if ((this.reg40 ^ val) == 0) {
                 return;
             }
             this.reg40 = val;
             this.UpdateAttenuation();
         }
-        Write60(chip, val /** u8 */) {
+        Write60(chip, val /** Int8 */) {
             let change = (this.reg60 ^ val);
             this.reg60 = val;
             if ((change & 0x0f) != 0) {
@@ -1215,7 +1337,7 @@ var Lemmings;
                 this.UpdateAttack(chip);
             }
         }
-        Write80(chip, val /** u8 */) {
+        Write80(chip, val /** Int8 */) {
             let change = (this.reg80 ^ val);
             if (change == 0) {
                 return;
@@ -1229,7 +1351,7 @@ var Lemmings;
                 this.UpdateRelease(chip);
             }
         }
-        WriteE0(chip, val /** u8 */) {
+        WriteE0(chip, val /** Int8 */) {
             if ((this.regE0 ^ val) == 0) {
                 return;
             }
@@ -1237,9 +1359,9 @@ var Lemmings;
             let waveForm = (val & ((0x3 & chip.waveFormMask) | (0x7 & chip.opl3Active)));
             this.regE0 = val;
             //this.waveBase = GlobalMembers.WaveTable + GlobalMembers.WaveBaseTable[waveForm];
-            this.waveBase = Lemmings.GlobalMembers.WaveBaseTable[waveForm];
-            this.waveStart = (Lemmings.GlobalMembers.WaveStartTable[waveForm] << (32 - 10)) >>> 0;
-            this.waveMask = Lemmings.GlobalMembers.WaveMaskTable[waveForm];
+            this.waveBase = DBOPL.GlobalMembers.WaveBaseTable[waveForm];
+            this.waveStart = (DBOPL.GlobalMembers.WaveStartTable[waveForm] << (32 - 10)) >>> 0;
+            this.waveMask = DBOPL.GlobalMembers.WaveMaskTable[waveForm];
         }
         Silent() {
             if (!((this.totalLevel + this.volume) >= ((12 * 256) >> (3 - ((9) - 9))))) {
@@ -1262,7 +1384,7 @@ var Lemmings;
                 this.waveCurrent += add;
             }
         }
-        KeyOn(mask /** u8 */) {
+        KeyOn(mask /** Int8 */) {
             if (this.keyOn == 0) {
                 //Restart the frequency generator
                 this.waveIndex = this.waveStart;
@@ -1271,7 +1393,7 @@ var Lemmings;
             }
             this.keyOn |= mask;
         }
-        KeyOff(mask /** u8 */) {
+        KeyOff(mask /** Int8 */) {
             this.keyOn &= ~mask;
             if (this.keyOn == 0) {
                 if (this.state != State.OFF) {
@@ -1331,7 +1453,7 @@ var Lemmings;
             this.volume = vol;
             return vol | 0;
         }
-        RateForward(add /* u32 */) {
+        RateForward(add /* UInt32 */) {
             this.rateIndex += add | 0;
             let ret = this.rateIndex >>> 24;
             this.rateIndex = this.rateIndex & ((1 << 24) - 1);
@@ -1344,7 +1466,7 @@ var Lemmings;
         ForwardVolume() {
             return this.currentLevel + this.TemplateVolume();
         }
-        GetSample(modulation /** Bits */) {
+        GetSample(modulation /** Int32 */) {
             //this.printDebug();
             let vol = this.ForwardVolume();
             if (((vol) >= ((12 * 256) >> (3 - ((9) - 9))))) {
@@ -1358,33 +1480,50 @@ var Lemmings;
                 return this.GetWave(index, vol);
             }
         }
-        GetWave(index /** Bitu */, vol /** Bitu */) {
-            //return ((this.waveBase[index & this.waveMask] * GlobalMembers.MulTable[vol >>> ((9) - 9)]) >> 16);
-            return ((Lemmings.GlobalMembers.WaveTable[this.waveBase + (index & this.waveMask)] * Lemmings.GlobalMembers.MulTable[vol >>> ((9) - 9)]) >> 16);
+        GetWave(index /** Uint32 */, vol /** Uint32 */) {
+            return ((DBOPL.GlobalMembers.WaveTable[this.waveBase + (index & this.waveMask)] * DBOPL.GlobalMembers.MulTable[vol >>> ((9) - 9)]) >> 16);
         }
     }
-    Lemmings.Operator = Operator;
-})(Lemmings || (Lemmings = {}));
-var Lemmings;
-(function (Lemmings) {
-    /*
-    public interface MixerChannel
-    {
-     void AddSamples_m32(short samples, tangible.RefObject<Integer> buffer);
-     void AddSamples_s32(short samples, tangible.RefObject<Integer> buffer);
-    }
-    
-    
-    
-    
-    
-    interface SynthHandler
-    {
-        Channel invoke(Chip chip, int samples, tangible.RefObject<Integer> output);
-    }
-    
-    
-    */
+    DBOPL.Operator = Operator;
+})(DBOPL || (DBOPL = {}));
+/*
+ *  Copyright (C) 2002-2015  The DOSBox Team
+ *
+ *  This program is free software; you can redistribute it and/or modify
+ *  it under the terms of the GNU General Public License as published by
+ *  the Free Software Foundation; either version 2 of the License, or
+ *  (at your option) any later version.
+ *
+ *  This program is distributed in the hope that it will be useful,
+ *  but WITHOUT ANY WARRANTY; without even the implied warranty of
+ *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ *  GNU General Public License for more details.
+ *
+ *  You should have received a copy of the GNU General Public License
+ *  along with this program; if not, write to the Free Software
+ *  Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
+ */
+/*
+* 2019 - Typescript Version: Thomas Zeugner
+*/
+/*
+    DOSBox implementation of a combined Yamaha YMF262 and Yamaha YM3812 emulator.
+    Enabling the opl3 bit will switch the emulator to stereo opl3 output instead of regular mono opl2
+    Except for the table generation it's all integer math
+    Can choose different types of generators, using muls and bigger tables, try different ones for slower platforms
+    The generation was based on the MAME implementation but tried to have it use less memory and be faster in general
+    MAME uses much bigger envelope tables and this will be the biggest cause of it sounding different at times
+
+    //TODO Don't delay first operator 1 sample in opl3 mode
+    //TODO Maybe not use class method pointers but a regular function pointers with operator as first parameter
+    //TODO Fix panning for the Percussion channels, would any opl3 player use it and actually really change it though?
+    //TODO Check if having the same accuracy in all frequency multipliers sounds better or not
+
+    //DUNNO Keyon in 4op, switch to 2op without keyoff.
+*/
+/* $Id: dbopl.cpp,v 1.10 2009-06-10 19:54:51 harekiet Exp $ */
+var DBOPL;
+(function (DBOPL) {
     var SynthMode;
     (function (SynthMode) {
         SynthMode[SynthMode["sm2AM"] = 0] = "sm2AM";
@@ -1399,33 +1538,28 @@ var Lemmings;
         SynthMode[SynthMode["sm6Start"] = 9] = "sm6Start";
         SynthMode[SynthMode["sm2Percussion"] = 10] = "sm2Percussion";
         SynthMode[SynthMode["sm3Percussion"] = 11] = "sm3Percussion";
-    })(SynthMode = Lemmings.SynthMode || (Lemmings.SynthMode = {}));
-    //Shifts for the values contained in chandata variable
+    })(SynthMode = DBOPL.SynthMode || (DBOPL.SynthMode = {}));
+    // Shifts for the values contained in chandata variable
     var Shifts;
     (function (Shifts) {
         Shifts[Shifts["SHIFT_KSLBASE"] = 16] = "SHIFT_KSLBASE";
         Shifts[Shifts["SHIFT_KEYCODE"] = 24] = "SHIFT_KEYCODE";
-    })(Shifts = Lemmings.Shifts || (Lemmings.Shifts = {}));
+    })(Shifts = DBOPL.Shifts || (DBOPL.Shifts = {}));
     ;
     // Max buffer size.  Since only 512 samples can be generated at a time, setting
     // this to 512 * 2 channels means it'll be the largest it'll ever need to be.
     const BUFFER_SIZE_SAMPLES = 1024;
     class OPL {
         constructor(freq, channels) {
-            this.dbopl = new Lemmings.Handler();
+            this.dbopl = new DBOPL.Handler();
             this.buffer = new Int16Array(BUFFER_SIZE_SAMPLES * channels);
-            this.mixer = new Lemmings.MixerChannel(this.buffer, channels);
+            this.mixer = new DBOPL.MixerChannel(this.buffer, channels);
             this.dbopl.Init(freq);
         }
         write(reg, val) {
-            //console.log("write("+ reg +", "+ val +")");
             this.dbopl.WriteReg(reg, val);
         }
-        getBuffer() {
-            return this.buffer;
-        }
         generate(lenSamples) {
-            //console.log( "generate(" + lenSamples + ")");
             if (lenSamples > 512) {
                 throw new Error('OPL.generate() cannot generate more than 512 samples per call');
             }
@@ -1436,10 +1570,12 @@ var Lemmings;
             return this.buffer;
         }
     }
-    Lemmings.OPL = OPL;
-})(Lemmings || (Lemmings = {}));
-var Lemmings;
-(function (Lemmings) {
+    DBOPL.OPL = OPL;
+})(DBOPL || (DBOPL = {}));
+/// example code used from : 
+//////  https://github.com/Malvineous/opljs
+var example;
+(function (example) {
     let audioCtx = new AudioContext();
     let source = audioCtx.createBufferSource();
     let scriptNode = audioCtx.createScriptProcessor(8192, 2, 2);
@@ -1477,165 +1613,7 @@ ptYAALYycAC1FgAApSAAALU2cACyFQAAthIAALI1AACmawAAtjHUAA==`);
     }
     const samplesPerTick = Math.round(audioCtx.sampleRate / 560);
     console.log('Init WASM');
-    let opl = new Lemmings.OPL(44100, 2);
-    opl.write(0, 0);
-    opl.write(0, 0);
-    opl.generate(512);
-    opl.generate(357);
-    opl.write(184, 0);
-    opl.write(177, 0);
-    opl.write(179, 0);
-    opl.write(180, 0);
-    opl.write(181, 0);
-    opl.write(182, 0);
-    opl.write(50, 2);
-    opl.write(82, 34);
-    opl.write(114, 242);
-    opl.write(146, 19);
-    opl.write(242, 0);
-    opl.write(53, 2);
-    opl.write(85, 1);
-    opl.write(117, 245);
-    opl.write(149, 67);
-    opl.write(245, 0);
-    opl.write(200, 14);
-    opl.write(168, 32);
-    opl.write(184, 46);
-    opl.write(33, 2);
-    opl.write(65, 34);
-    opl.write(97, 242);
-    opl.write(129, 19);
-    opl.write(225, 0);
-    opl.write(36, 2);
-    opl.write(68, 1);
-    opl.write(100, 245);
-    opl.write(132, 67);
-    opl.write(228, 0);
-    opl.write(193, 14);
-    opl.write(161, 32);
-    opl.write(177, 42);
-    opl.write(40, 17);
-    opl.write(72, 138);
-    opl.write(104, 241);
-    opl.write(136, 17);
-    opl.write(232, 0);
-    opl.write(43, 1);
-    opl.write(75, 65);
-    opl.write(107, 241);
-    opl.write(139, 179);
-    opl.write(235, 0);
-    opl.write(195, 1);
-    opl.write(163, 32);
-    opl.write(179, 46);
-    opl.write(41, 17);
-    opl.write(73, 138);
-    opl.write(105, 241);
-    opl.write(137, 17);
-    opl.write(233, 0);
-    opl.write(44, 1);
-    opl.write(76, 65);
-    opl.write(108, 241);
-    opl.write(140, 179);
-    opl.write(236, 0);
-    opl.write(196, 1);
-    opl.write(164, 32);
-    opl.write(180, 42);
-    opl.write(42, 5);
-    opl.write(74, 78);
-    opl.write(106, 218);
-    opl.write(138, 37);
-    opl.write(234, 0);
-    opl.write(45, 1);
-    opl.write(77, 1);
-    opl.write(109, 249);
-    opl.write(141, 21);
-    opl.write(237, 0);
-    opl.write(197, 10);
-    opl.write(165, 48);
-    opl.write(181, 55);
-    opl.write(48, 50);
-    opl.write(80, 68);
-    opl.write(112, 248);
-    opl.write(144, 255);
-    opl.write(240, 0);
-    opl.write(51, 17);
-    opl.write(83, 1);
-    opl.write(115, 245);
-    opl.write(147, 127);
-    opl.write(243, 0);
-    opl.write(198, 14);
-    opl.write(166, 48);
-    opl.write(182, 51);
-    opl.generate(512);
-    opl.generate(512);
-    opl.generate(512);
-    opl.generate(512);
-    opl.generate(512);
-    opl.generate(512);
-    opl.generate(512);
-    opl.generate(512);
-    opl.generate(512);
-    opl.generate(512);
-    opl.generate(512);
-    opl.generate(512);
-    opl.generate(512);
-    opl.generate(512);
-    opl.generate(155);
-    opl.generate(512);
-    opl.generate(512);
-    opl.generate(501);
-    opl.write(178, 0);
-    opl.write(182, 19);
-    opl.write(34, 5);
-    opl.write(66, 78);
-    opl.write(98, 218);
-    opl.write(130, 37);
-    opl.write(226, 0);
-    opl.write(37, 1);
-    opl.write(69, 1);
-    opl.write(101, 249);
-    opl.write(133, 21);
-    opl.write(229, 0);
-    opl.write(194, 10);
-    opl.write(162, 48);
-    opl.write(178, 51);
-    opl.write(166, 152);
-    opl.write(182, 49);
-    opl.generate(512);
-    opl.generate(512);
-    opl.generate(512);
-    opl.generate(512);
-    opl.generate(512);
-    opl.generate(512);
-    opl.generate(512);
-    opl.generate(512);
-    opl.generate(512);
-    opl.generate(512);
-    opl.generate(512);
-    opl.generate(512);
-    opl.generate(512);
-    opl.generate(11);
-    opl.generate(512);
-    opl.generate(512);
-    opl.generate(512);
-    opl.generate(512);
-    opl.generate(133);
-    opl.write(181, 23);
-    opl.write(182, 17);
-    opl.write(165, 32);
-    opl.write(181, 54);
-    opl.write(182, 49);
-    opl.generate(512);
-    opl.generate(512);
-    opl.generate(512);
-    opl.generate(512);
-    opl.generate(512);
-    opl.generate(512);
-    opl.generate(512);
-    opl.generate(512);
-    opl.generate(512);
-    console.log('done!');
-    //let opl = new OPL(audioCtx.sampleRate, 2);
+    let opl = new DBOPL.OPL(audioCtx.sampleRate, 2);
     console.log('WASM init done');
     let p = 0;
     let lenGen = 0;
@@ -1720,5 +1698,5 @@ ptYAALYycAC1FgAApSAAALU2cACyFQAAthIAALI1AACmawAAtjHUAA==`);
             ev.target.className = muted ? 'mute' : 'play';
         };
     }
-})(Lemmings || (Lemmings = {}));
+})(example || (example = {}));
 //# sourceMappingURL=alib.js.map

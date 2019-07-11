@@ -1,50 +1,72 @@
-module Lemmings {
+/*
+ *  Copyright (C) 2002-2015  The DOSBox Team
+ *
+ *  This program is free software; you can redistribute it and/or modify
+ *  it under the terms of the GNU General Public License as published by
+ *  the Free Software Foundation; either version 2 of the License, or
+ *  (at your option) any later version.
+ *
+ *  This program is distributed in the hope that it will be useful,
+ *  but WITHOUT ANY WARRANTY; without even the implied warranty of
+ *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ *  GNU General Public License for more details.
+ *
+ *  You should have received a copy of the GNU General Public License
+ *  along with this program; if not, write to the Free Software
+ *  Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
+ */
+
+/* 
+* 2019 - Typescript Version: Thomas Zeugner
+*/
+
+namespace DBOPL {
 
     export class Chip {
         //This is used as the base counter for vibrato and tremolo
-        public lfoCounter: number; //Bit32u
-        public lfoAdd: number; //Bit32u
+        public lfoCounter: number; // UInt32
+        public lfoAdd: number; // UInt32
 
 
-        public noiseCounter: number; //Bit32u
-        public noiseAdd: number; //Bit32u
-        public noiseValue: number; //Bit32u
+        public noiseCounter: number; // UInt32
+        public noiseAdd: number; // UInt32
+        public noiseValue: number; // UInt32
 
         /// Frequency scales for the different multiplications
-        public freqMul: Uint32Array = new Uint32Array(16) //Bit32u[16];
+        public freqMul: Uint32Array = new Uint32Array(16)
         /// Rates for decay and release for rate of this chip
-        public linearRates: Int32Array = new Int32Array(76); //new int[76];
+        public linearRates: Int32Array = new Int32Array(76);
         /// Best match attack rates for the rate of this chip
-        public attackRates: Int32Array = new Int32Array(76); //new int[76];
+        public attackRates: Int32Array = new Int32Array(76);
 
         /// 18 channels with 2 operators each
         public chan: Channel[];
-        
+
         /// this is a linked table to all used operators replacing the original DosBox OpOffsetTable[]
-        private OpTable:Operator[];
+        private OpTable: Operator[];
         /// this is the list of all availibel operators
-        private op:Operator[];
+        private op: Operator[];
         /// this is a linked table to all used Channels replacing the original DosBox ChanOffsetTable[]
-        private ChanTable:Channel[];
+        private ChanTable: Channel[];
 
-        public reg104: number; //Bit8u
-        public reg08: number; //Bit8u
-        public reg04: number; //Bit8u
-        public regBD: number; //Bit8u
-        public vibratoIndex: number; //Bit8u
-        public tremoloIndex: number; //Bit8u
-        public vibratoSign: number; //Bit8s
-        public vibratoShift: number; //Bit8u
-        public tremoloValue: number; //Bit8u
-        public vibratoStrength: number; //Bit8u
-        public tremoloStrength: number; //Bit8u
+        public reg104: number; // UInt8
+        public reg08: number; // UInt8
+        public reg04: number; // UInt8
+        public regBD: number; // UInt8
+        public vibratoIndex: number; // UInt8
+        public tremoloIndex: number; // UInt8
+        public vibratoSign: number; // Int8
+        public vibratoShift: number; // UInt8
+        public tremoloValue: number; // UInt8
+        public vibratoStrength: number; // UInt8
+        public tremoloStrength: number; // UInt8
         /// Mask for allowed wave forms
-        public waveFormMask: number; //Bit8u
+        public waveFormMask: number; // UInt8
         //0 or -1 when enabled
-        public opl3Active: number; //Bit8s
+        public opl3Active: number; // Int8
 
 
-        public ForwardLFO(samples: number /* Bit32u */): number /* Bit32u */ {
+        public ForwardLFO(samples: number /* UInt32 */): number /* UInt32 */ {
 
             //Current vibrato value, runs 4x slower than tremolo
             this.vibratoSign = (GlobalMembers.VibratoTable[this.vibratoIndex >>> 2]) >> 7;
@@ -75,7 +97,7 @@ module Lemmings {
             return count;
         }
 
-        public ForwardNoise(): number /* Bit32u */ {
+        public ForwardNoise(): number /* UInt32 */ {
             this.noiseCounter += this.noiseAdd;
 
             let count = (this.noiseCounter >>> ((32 - 10) - 10));
@@ -89,7 +111,7 @@ module Lemmings {
             return this.noiseValue;
         }
 
-        public WriteBD(val: number /* Bit8u */): void {
+        public WriteBD(val: number /* UInt8 */): void {
             let change = this.regBD ^ val;
             if (change == 0) {
                 return;
@@ -241,7 +263,7 @@ module Lemmings {
 
                     index = (((reg >>> 4) & 0x10) | (reg & 0xf));
                     if (this.ChanTable[index]) {
-                       this.ChanTable[index].WriteA0(this, val);
+                        this.ChanTable[index].WriteA0(this, val);
                     };
                     break;
 
@@ -277,7 +299,7 @@ module Lemmings {
             }
         }
 
-        public WriteAddr(port: number /* Bit32u */, val:number /* byte */): number/* Bit8u */ {
+        public WriteAddr(port: number /* UInt32 */, val: number /* byte */): number/* UInt8 */ {
             switch (port & 3) {
                 case 0:
                     return val;
@@ -292,7 +314,7 @@ module Lemmings {
             return 0;
         }
 
-        public GenerateBlock2(total: number /* Bitu */, output: Int32Array /*  Bit32s* */): void {
+        public GenerateBlock2(total: number /* UInt32 */, output: Int32Array /*  Int32 */): void {
             let outputIndex = 0;
 
             while (total > 0) {
@@ -313,11 +335,11 @@ module Lemmings {
         }
 
 
-        public GenerateBlock3(total: number /* Bitu */, output: Int32Array /* Bit32s* */): void {
+        public GenerateBlock3(total: number /* UInt32 */, output: Int32Array /* Int32 */): void {
             let outputIndex = 0;
-            
+
             while (total > 0) {
-                let samples = this.ForwardLFO(total); /** Bit32u */
+                let samples = this.ForwardLFO(total);
 
                 output.fill(0, outputIndex, outputIndex + samples * 2);
 
@@ -332,7 +354,7 @@ module Lemmings {
         }
 
 
-        public Setup(rate: number /* Bit32u */): void {
+        public Setup(rate: number /* UInt32 */): void {
             this.InitTables();
 
             let scale = GlobalMembers.OPLRATE / rate;
@@ -465,13 +487,13 @@ module Lemmings {
 
         private InitTables() {
             this.OpTable = new Array(GlobalMembers.OpOffsetTable.length);
-            
-            for(let i=0; i< GlobalMembers.OpOffsetTable.length; i++) {
+
+            for (let i = 0; i < GlobalMembers.OpOffsetTable.length; i++) {
                 this.OpTable[i] = this.op[GlobalMembers.OpOffsetTable[i]];
             }
 
             this.ChanTable = new Array(GlobalMembers.ChanOffsetTable.length);
-            for(let i=0; i< GlobalMembers.ChanOffsetTable.length; i++) {
+            for (let i = 0; i < GlobalMembers.ChanOffsetTable.length; i++) {
                 this.ChanTable[i] = this.chan[GlobalMembers.ChanOffsetTable[i]];
             }
         }
@@ -484,12 +506,11 @@ module Lemmings {
             this.opl3Active = 0;
 
             const ChannelCount = 18;
-            this.chan = new Array<Channel>(ChannelCount); // new Channel[18];
-            this.op = new Array<Operator>(2 * ChannelCount); // new Operator[18 * 2]
+            this.chan = new Array<Channel>(ChannelCount);
+            this.op = new Array<Operator>(2 * ChannelCount);
 
             for (let i = 0; i < this.op.length; i++) {
                 this.op[i] = new Operator();
-                this.op[i].OperatorIndex = i;
             }
 
             for (let i = 0; i < ChannelCount; i++) {

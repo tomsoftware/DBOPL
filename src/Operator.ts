@@ -1,4 +1,26 @@
-module Lemmings {
+/*
+ *  Copyright (C) 2002-2015  The DOSBox Team
+ *
+ *  This program is free software; you can redistribute it and/or modify
+ *  it under the terms of the GNU General Public License as published by
+ *  the Free Software Foundation; either version 2 of the License, or
+ *  (at your option) any later version.
+ *
+ *  This program is distributed in the hope that it will be useful,
+ *  but WITHOUT ANY WARRANTY; without even the implied warranty of
+ *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ *  GNU General Public License for more details.
+ *
+ *  You should have received a copy of the GNU General Public License
+ *  along with this program; if not, write to the Free Software
+ *  Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
+ */
+
+/* 
+* 2019 - Typescript Version: Thomas Zeugner
+*/
+
+namespace DBOPL {
 
     enum Operator20Masks {
         MASK_KSR = 0x10,
@@ -18,69 +40,56 @@ module Lemmings {
 
     export class Operator {
 
-        /// todo: delete me
-        public OperatorIndex: number;
+        public waveBase: number; /** Int16  */
+        public waveMask: number; /** UInt32 */
+        public waveStart: number; /** UInt32 */
 
-        //public volHandler: VolumeHandler;
+        public waveIndex: number; /** UInt32 */ // WAVE_signed long shifted counter of the frequency index
+        public waveAdd: number; /** UInt32 */ //The base frequency without vibrato
+        public waveCurrent: number; /** UInt32 */  //waveAdd + vibratao
 
+        public chanData: number; /** UInt32 */ //Frequency/octave and derived data coming from whatever channel controls this
+        public freqMul: number; /** UInt32 */ //Scale channel frequency with this, TODO maybe remove?
+        public vibrato: number; /** UInt32 */ //Scaled up vibrato strength
+        public sustainLevel: number; /** Int32 */ //When stopping at sustain level stop here
+        public totalLevel: number; /** Int32 */ //totalLevel is added to every generated volume
+        public currentLevel: number; /** UInt32 */ //totalLevel + tremolo
+        public volume: number; /** Int32 */ //The currently active volume
 
-        public waveBase: number; /** s16*  */
-        public waveMask: number; /** u32 */
-        public waveStart: number; /** u32 */
+        public attackAdd: number; /** UInt32 */ //Timers for the different states of the envelope
+        public decayAdd: number; /** UInt32 */
+        public releaseAdd: number; /** UInt32  */
+        public rateIndex: number; /** UInt32 */ //Current position of the evenlope
 
-        public waveIndex: number; /**u32 */ // WAVE_signed long shifted counter of the frequency index
-        public waveAdd: number; /**u32 */  	//The base frequency without vibrato
-        public waveCurrent: number; /**u32 */  //waveAdd + vibratao
-
-        public chanData: number; /**u32 *///Frequency/octave and derived data coming from whatever channel controls this
-        public freqMul: number; /**u32 *///Scale channel frequency with this, TODO maybe remove?
-        public vibrato: number; /**u32 */ 	//Scaled up vibrato strength
-        public sustainLevel: number; /** s32*/ //When stopping at sustain level stop here
-        public totalLevel: number; /** s32*/ //totalLevel is added to every generated volume
-        public currentLevel: number; /**u32 */ //totalLevel + tremolo
-        public volume: number; /**s32 *///The currently active volume
-
-        public attackAdd: number; /** u32 */ //Timers for the different states of the envelope
-        public decayAdd: number; /** u32 */
-        public releaseAdd: number; /**u32  */
-        public rateIndex: number; /** u32 */ //Current position of the evenlope
-
-        public rateZero: number; /** u8 */ 	//signed long for the different states of the envelope having no changes
-        public keyOn: number; /** u8 */ //Bitmask of different values that can generate keyon
+        public rateZero: number; /** Int8 */ 	//signed long for the different states of the envelope having no changes
+        public keyOn: number; /** Int8 */ //Bitmask of different values that can generate keyon
 
         //Registers, also used to check for changes
-        public reg20: number; /** u8 */
-        public reg40: number; /** u8 */
-        public reg60: number; /** u8 */
-        public reg80: number; /** u8 */
-        public regE0: number; /** u8 */
+        public reg20: number; /** Int8 */
+        public reg40: number; /** Int8 */
+        public reg60: number; /** Int8 */
+        public reg80: number; /** Int8 */
+        public regE0: number; /** Int8 */
 
         //Active part of the envelope we're in
-        public state: number; /** u8 */
+        public state: number; /** Int8 */
         //0xff when tremolo is enabled
-        public tremoloMask: number; /** u8 */
+        public tremoloMask: number; /** Int8 */
         //Strength of the vibrato
-        public vibStrength: number; /** u8 */
+        public vibStrength: number; /** Int8 */
         //Keep track of the calculated KSR so we can check for changes
-        public ksr: number; /** u8 */
+        public ksr: number; /** Int8 */
 
 
-        //printDebug() {
-          //  console.log(this.OperatorIndex + ": " + this.waveBase + " " + this.waveMask + " " + this.waveStart + " " + this.waveIndex + " " + this.waveAdd + " " + this.waveCurrent + " " + this.chanData + " " + this.freqMul + " " + this.vibrato + " " + this.sustainLevel + " " + this.totalLevel + " " + this.currentLevel + " " + this.volume + " " + this.attackAdd + " " + this.decayAdd + " " + this.releaseAdd + " " + this.rateIndex + " " + this.rateZero + " " + this.keyOn);
-         //   console.log(this.reg20 + " " + this.reg40 + " " + this.reg60 + " " + this.reg80 + " " + this.regE0 + " " + this.state + " " + this.tremoloMask + " " + this.vibStrength + " " + this.ksr);
-        //}
-
-
-        private SetState(s: State /**u8  */): void {
+        private SetState(s: State /** Int8 */): void {
             this.state = s;
-            //this.volHandler = GlobalMembers.VolumeHandlerTable[s];
         }
 
         //We zero out when rate == 0
         private UpdateAttack(chip: Chip): void {
-            let rate = this.reg60 >>> 4; /** Bit8u */
+            let rate = this.reg60 >>> 4; /** UInt8 */
             if (rate != 0) {
-                let val = ((rate << 2) + this.ksr) | 0; /** Bit8u */;
+                let val = ((rate << 2) + this.ksr) | 0; /** UInt8 */;
                 this.attackAdd = chip.attackRates[val];
                 this.rateZero &= ~(1 << State.ATTACK);
             }
@@ -127,7 +136,7 @@ module Lemmings {
             let tl = this.reg40 & 0x3f;
 
             let kslShift = GlobalMembers.KslShiftTable[this.reg40 >>> 6];
-            //Make sure the attenuation goes to the right bits
+            //Make sure the attenuation goes to the right Int32
             this.totalLevel = tl << ((9) - 7);
             this.totalLevel += (kslBase << ((9) - 9)) >> kslShift;
         }
@@ -169,7 +178,7 @@ module Lemmings {
             }
         }
 
-        public Write20(chip: Chip, val: number /** u8 */): void {
+        public Write20(chip: Chip, val: number /** Int8 */): void {
             let change = (this.reg20 ^ val);
             if (change == 0) {
                 return;
@@ -196,7 +205,7 @@ module Lemmings {
             }
         }
 
-        public Write40(chip: Chip, val: number /** u8 */): void {
+        public Write40(chip: Chip, val: number /** Int8 */): void {
             if ((this.reg40 ^ val) == 0) {
                 return;
             }
@@ -204,7 +213,7 @@ module Lemmings {
             this.UpdateAttenuation();
         }
 
-        public Write60(chip: Chip, val: number /** u8 */): void {
+        public Write60(chip: Chip, val: number /** Int8 */): void {
             let change = (this.reg60 ^ val);
             this.reg60 = val;
             if ((change & 0x0f) != 0) {
@@ -215,7 +224,7 @@ module Lemmings {
             }
         }
 
-        public Write80(chip: Chip, val: number /** u8 */): void {
+        public Write80(chip: Chip, val: number /** Int8 */): void {
             let change = (this.reg80 ^ val);
             if (change == 0) {
                 return;
@@ -231,7 +240,7 @@ module Lemmings {
             }
         }
 
-        public WriteE0(chip: Chip, val: number /** u8 */): void {
+        public WriteE0(chip: Chip, val: number /** Int8 */): void {
             if ((this.regE0 ^ val) == 0) {
                 return;
             }
@@ -275,13 +284,11 @@ module Lemmings {
             }
         }
 
-        public KeyOn(mask: number /** u8 */) {
+        public KeyOn(mask: number /** Int8 */) {
             if (this.keyOn == 0) {
                 //Restart the frequency generator
 
                 this.waveIndex = this.waveStart;
-
-
 
                 this.rateIndex = 0;
                 this.SetState(State.ATTACK);
@@ -289,7 +296,7 @@ module Lemmings {
             this.keyOn |= mask;
         }
 
-        public KeyOff(mask: number /** u8 */) {
+        public KeyOff(mask: number /** Int8 */) {
             this.keyOn &= ~mask;
             if (this.keyOn == 0) {
                 if (this.state != State.OFF) {
@@ -354,7 +361,7 @@ module Lemmings {
             return vol | 0;
         }
 
-        public RateForward(add: number /* u32 */): number /** s32 */ {
+        public RateForward(add: number /* UInt32 */): number /** Int32 */ {
             this.rateIndex += add | 0;
 
             let ret = this.rateIndex >>> 24;
@@ -371,7 +378,7 @@ module Lemmings {
             return this.currentLevel + this.TemplateVolume();
         }
 
-        public GetSample(modulation: number /** Bits */): number /** Bits  */ {
+        public GetSample(modulation: number /** Int32 */): number /** Int32  */ {
             //this.printDebug();
             let vol = this.ForwardVolume();
 
@@ -388,9 +395,7 @@ module Lemmings {
         }
 
 
-        public GetWave(index: number /** Bitu */, vol: number /** Bitu */): number /** Bits */ {
-
-            //return ((this.waveBase[index & this.waveMask] * GlobalMembers.MulTable[vol >>> ((9) - 9)]) >> 16);
+        public GetWave(index: number /** Uint32 */, vol: number /** Uint32 */): number /** Int32 */ {
             return ((GlobalMembers.WaveTable[this.waveBase + (index & this.waveMask)] * GlobalMembers.MulTable[vol >>> ((9) - 9)]) >> 16);
         }
 
@@ -416,8 +421,6 @@ module Lemmings {
             this.releaseAdd = 0;
         }
     }
-
-
 
 
 }
